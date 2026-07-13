@@ -17,7 +17,8 @@ function scoreSquare(score: number): string {
 
 export function dailyShareText(dateKey: string, scores: number[], total: number): string {
   const squares = scores.map(scoreSquare).join("");
-  return `Chronology ${dateKey}\n${total}/${scores.length * 100}\n${squares}\n${gameUrl()}`;
+  const perRound = scores.join(" / ");
+  return `Chronology ${dateKey}\n${total}/${scores.length * 100}\n${squares}\n${perRound}\n${gameUrl()}`;
 }
 
 export function suddenDeathShareText(rounds: number): string {

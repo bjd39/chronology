@@ -54,8 +54,8 @@ export default function Faq({ onClose }: Props) {
           score = 200 × (1 − logistic(error ÷ {DAILY_SPREAD}))
         </p>
         <p className="muted-note">
-          Roughly: nail it → 100, within ~15% → ~75, within ~30% → ~50, double or
-          halve the true age → near 0.
+          Roughly: nail it → 100, within ~15% → ~75, within ~30% → ~55, way off (double
+          or halve the true age) → near 0.
         </p>
 
         <h3>Your stats</h3>

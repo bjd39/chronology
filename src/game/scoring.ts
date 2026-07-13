@@ -6,9 +6,9 @@
 // Reference "present" year used for the how-long-ago calculation.
 export const REF_YEAR = 2026;
 
-// Logistic spread for the daily score. Smaller = harsher. At r = SPREAD the
-// score is ~73; at r = 2*SPREAD it's ~54.
-export const DAILY_SPREAD = 0.2;
+// Logistic spread for the daily score. Smaller = harsher. At this spread a guess
+// within ~15% of the true "how long ago" scores ~75, and within ~30% scores ~55.
+export const DAILY_SPREAD = 0.3;
 
 // Sudden-death: a relative error above this ends the game.
 export const SUDDEN_DEATH_THRESHOLD = 0.1;

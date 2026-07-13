@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 """Build the Chronology game corpus from Wikipedia century pages (antiquity->19thC)
-and year pages (1900->2025 modern era)."""
+and year pages (1900->2025 modern era).
+
+Cleaning goals:
+  * strip all wiki/HTML markup, including stray brackets/pipes from partial links;
+  * DROP any event whose description still names a year (BC/AD, a 4-digit year, a
+    decade like "1990s"), since that gives the answer away;
+  * emit pretty-printed JSON (one event per line) so the corpus is hand-checkable.
+"""
 import json, re, sys, time, urllib.request, urllib.parse
 
 UA = "ChronologyGamePrototype/0.1 (personal hobby project; contact ben@mntc.ai)"
@@ -38,22 +45,48 @@ def events_section(wt):
     return "\n".join(out)
 
 def strip_markup(s):
+    # references, comments
     s = re.sub(r"<ref[^>]*?/>", "", s)
     s = re.sub(r"<ref[^>]*?>.*?</ref>", "", s, flags=re.DOTALL)
     s = re.sub(r"<!--.*?-->", "", s, flags=re.DOTALL)
-    for _ in range(3):
+    # templates (repeat for simple nesting)
+    for _ in range(4):
         s = re.sub(r"\{\{[^{}]*\}\}", "", s)
-    s = re.sub(r"\[\[[^\]|]*\|([^\]]*)\]\]", r"\1", s)
-    s = re.sub(r"\[\[([^\]]*)\]\]", r"\1", s)
+    # media/category links first (their pipes hold layout junk, not prose)
+    s = re.sub(r"\[\[(?:File|Image|Category):[^\[\]]*\]\]", "", s, flags=re.IGNORECASE)
+    # piped links: keep the text after the LAST pipe (the display text)
+    s = re.sub(r"\[\[[^\[\]]*\|([^\[\]|]*)\]\]", r"\1", s)
+    # plain links
+    s = re.sub(r"\[\[([^\[\]]*)\]\]", r"\1", s)
+    # external links
     s = re.sub(r"\[https?://\S+\s+([^\]]*)\]", r"\1", s)
     s = re.sub(r"\[https?://\S+\]", "", s)
+    # bold / italic
     s = s.replace("'''", "").replace("''", "")
+    # any remaining tags / entities
     s = re.sub(r"<[^>]+>", "", s)
     s = s.replace("&nbsp;", " ").replace("&ndash;", "–").replace("&mdash;", "—")
+    s = s.replace("&amp;", "&").replace("&quot;", '"')
+    # strip any orphaned markup characters left by partial links/templates
+    s = s.replace("[", "").replace("]", "").replace("{", "").replace("}", "").replace("|", " ")
+    # tidy whitespace and spacing before punctuation
     s = re.sub(r"\s+", " ", s).strip()
+    s = re.sub(r"\s+([.,;:!?])", r"\1", s)
     return s
 
-# Century line: optional "c.", a year (linked or bare, AD/BC), junk up to first colon, then desc.
+# A description "names a year" (and so would give the answer away) if it contains an
+# explicit era, a 4-digit year, a decade, or "the year N".
+YEAR_REF = re.compile(
+    r"\b\d{1,4}\s?(?:BC|BCE|AD|CE)\b"          # 44 BC, 300 AD, 1200 CE
+    r"|\b(?:1\d{3}|20[0-2]\d)\b"                # standalone 1000-2029
+    r"|\b\d{3,4}s\b"                            # 1990s, 300s
+    r"|\bthe year\s+\d{1,4}\b"                  # "the year 1066"
+)
+
+def names_a_year(text):
+    return bool(YEAR_REF.search(text))
+
+# Century line: optional "c.", a year (linked or bare, AD/BC), junk up to first colon.
 CENTURY_RE = re.compile(
     r"^\*+\s*(?:c\.\s*)?(?:\[\[\s*)?(?:AD\s*)?(\d{1,4})(\s*BC)?\b[^:\]]*(?:\]\])?[^:]*?:\s*(.+)$"
 )
@@ -69,40 +102,60 @@ def parse_century(section, default_bc):
             continue
         num = int(m.group(1))
         is_bc = bool(m.group(2)) or default_bc
-        desc = strip_markup(m.group(3))
-        if desc:
-            items.append((-num if is_bc else num, desc))
+        items.append((-num if is_bc else num, m.group(3)))
     return items
 
 def parse_year_page(section, year, cap):
-    """Year page Events bullets: '* [[Month Day]] – description'."""
-    raw_items = []
-    for raw in section.split("\n"):
-        ln = raw.strip()
+    """Year page Events bullets: '* [[Month Day]] - description'."""
+    raw = []
+    for line in section.split("\n"):
+        ln = line.strip()
         if not (ln.startswith("* ") or ln.startswith("*[")):
             continue  # skip nested ** sub-bullets and non-bullets
-        # must contain an en/em dash separating date from event
-        m = re.match(r"^\*+\s*(.+?)\s*[–—]\s*(.+)$", ln)
+        ln = ln.replace("&ndash;", "–").replace("&mdash;", "—")
+        # Split date from event on the FIRST *spaced* dash. Requiring whitespace on
+        # both sides avoids splitting inside things like "(1912–49)".
+        m = re.match(r"^\*+\s*(.+?)\s+[–—]\s+(.+)$", ln)
         if not m:
             continue
         date_part, desc = m.group(1), m.group(2)
-        # date_part should reference a month (guards against prose lines)
         if not re.search(r"January|February|March|April|May|June|July|August|"
                          r"September|October|November|December", date_part):
             continue
-        desc = strip_markup(desc)
-        if desc:
-            raw_items.append(desc)
-    # even spread across the year, capped
-    if len(raw_items) > cap:
-        step = len(raw_items) / cap
-        raw_items = [raw_items[int(i * step)] for i in range(cap)]
-    return [(year, d) for d in raw_items]
+        raw.append(desc)
+    if len(raw) > cap:
+        step = len(raw) / cap
+        raw = [raw[int(i * step)] for i in range(cap)]
+    return [(year, d) for d in raw]
+
+def finalize(desc):
+    """Clean a raw description; return None if it should be dropped."""
+    s = strip_markup(desc)
+    # drop parentheticals containing a digit — dates, reign spans, "(aged 72)", etc.
+    # (these are the most common way a clue leaks its own answer)
+    s = re.sub(r"\s*\([^()]*\d[^()]*\)", "", s)
+    s = s.strip().strip("*").strip()
+    # guard against leftover fragments like "49) ..." from a bad upstream split
+    if re.match(r"^[\d)\]]", s):
+        return None
+    if names_a_year(s):
+        return None
+    if len(s) < 20 or len(s) > 190:
+        return None
+    if not re.search(r"[A-Za-z]", s):
+        return None
+    # capitalize first alphabetic character
+    for i, ch in enumerate(s):
+        if ch.isalpha():
+            s = s[:i] + ch.upper() + s[i + 1:]
+            break
+    if s[-1] not in ".!?":
+        s = s.rstrip(",;:") + "."
+    return s
 
 def main():
     all_items = []
 
-    # Century pages: BC 1..25 and AD 1..19 (20th/21st handled via year pages)
     pages = []
     for n in range(1, 20):
         pages.append((ordinal(n) + "_century", False))
@@ -120,7 +173,6 @@ def main():
         all_items.extend(items)
         time.sleep(0.25)
 
-    # Year pages: modern era
     for year in range(1900, 2026):
         page = str(year)
         try:
@@ -134,29 +186,27 @@ def main():
         all_items.extend(items)
         time.sleep(0.2)
 
-    # clean / filter / dedupe
-    seen, cleaned = set(), []
-    for year, desc in all_items:
-        desc = desc.strip()
-        # trim dangling connective tails left by ref/template removal
-        desc = re.sub(r"[\s,;:]+$", "", desc)
-        if len(desc) < 20 or len(desc) > 190:
+    seen, cleaned, dropped = set(), [], 0
+    for year, raw in all_items:
+        s = finalize(raw)
+        if s is None:
+            dropped += 1
             continue
-        if not re.search(r"[A-Za-z]", desc):
-            continue
-        if desc[-1] not in ".!?":
-            desc += "."
-        key = re.sub(r"[^a-z0-9]", "", desc.lower())[:55]
+        key = re.sub(r"[^a-z0-9]", "", s.lower())[:55]
         if key in seen:
             continue
         seen.add(key)
-        cleaned.append({"y": year, "e": desc})
+        cleaned.append({"y": year, "e": s})
 
     cleaned.sort(key=lambda x: (x["y"], x["e"]))
-    print(f"TOTAL: {len(cleaned)}", file=sys.stderr)
+    print(f"TOTAL: {len(cleaned)} (dropped for naming a year / too short: {dropped})",
+          file=sys.stderr)
+
     out = sys.argv[1] if len(sys.argv) > 1 else "events.json"
     with open(out, "w") as f:
-        json.dump(cleaned, f, ensure_ascii=False, separators=(",", ":"))
+        f.write("[\n")
+        f.write(",\n".join("  " + json.dumps(e, ensure_ascii=False) for e in cleaned))
+        f.write("\n]\n")
     print(f"wrote {out}", file=sys.stderr)
 
 if __name__ == "__main__":
