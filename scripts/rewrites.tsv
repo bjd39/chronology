@@ -1,0 +1,30 @@
+# Hand-written replacements for event text that survived the scraper mangled
+# or too terse to read as a question. <year>|<slug><TAB><replacement text>.
+# The slug is of the ORIGINAL text, so these keep matching after a rescrape.
+180|reignofcommodusromanemperor	Commodus becomes Roman emperor.
+193|reignoftheromanemperorseptimiusseverus	Septimius Severus becomes Roman emperor.
+211|caracallaromanemperor	Caracalla becomes Roman emperor.
+284|diocletianromanemperor	Diocletian becomes Roman emperor.
+380|chandraguptaiireignsoverthegoldenageoftheguptaempire	Chandragupta II becomes emperor of the Gupta Empire, which reaches its golden age under him.
+415|kumaraguptaguptaemperor	Kumaragupta I becomes emperor of the Gupta Empire.
+455|skandaguptathelastgreatguptaemperor	Skandagupta, the last great Gupta emperor, comes to the throne.
+490|approximatedatebattleofmountbadonaccordingtolegendbriti	Battle of Mount Badon. According to legend, British forces led by King Arthur defeated the invading Saxons.
+531|reignofpersianshahkhosraui	Khosrau I becomes Shah of Persia.
+579|reignofpersianshahhormizdiv	Hormizd IV becomes Shah of Persia.
+582|reignofromanemperormaurice	Maurice becomes Roman emperor.
+712|emperorxuanzongreignedthetimewasconsideredoneofchinashi	Emperor Xuanzong ascends the throne of Tang China, beginning a period regarded as one of the dynasty's high points.
+713|treatyoftudmirsignedbetweenabdalazizthecommanderofmusli	The Treaty of Tudmir is signed between Abd al-Aziz, commander of the Muslim troops invading Spain, and Theodemir, the Christian ruler of a region in the south.
+871|reignofalfredthegreatthefirstkingoftheenglish	Alfred the Great begins his reign in Wessex.
+1128|onjune24thekingdomofportugalgainsindependencefromthekin	The Kingdom of Portugal gains independence from the Kingdom of Leon at the Battle of Sao Mamede.
+1221|thebattleofmansurahendinadecisivevictoryfortheegyptians	The Battle of Mansurah ends in a decisive victory for the Egyptians, forcing the surrender of the Crusaders and their departure from Egypt.
+1321|dantealighieridivinecomedy	Dante Alighieri completes the Divine Comedy shortly before his death.
+1467|thesengokuperiodisoneofcivilwarinjapan	The Onin War breaks out in Japan, beginning the Sengoku period of civil war.
+1520|thereignofsuleimanthemagnificentmarksthezenithoftheotto	Suleiman the Magnificent becomes Ottoman sultan, beginning the reign that marks the zenith of the empire.
+1526|mughalempirefoundedbybabur	Babur founds the Mughal Empire in northern India.
+1587|thereignofabbasimarksthezenithofthesafaviddynasty	Abbas I becomes shah of Persia, beginning the reign that marks the zenith of the Safavid dynasty.
+1605|thereignofmughalemperorjahangirafterthedeathofemperorak	Jahangir becomes Mughal emperor on the death of his father Akbar.
+1607|thejamestownestablishment	Jamestown, the first permanent English settlement in North America, is founded in Virginia.
+1735|theqianlongemperorofchinaoverseesahugeexpansioninterrit	The Qianlong Emperor ascends the throne of China, and oversees a huge expansion in territory.
+1762|reignofcatherinethegreatofrussia	Catherine the Great seizes the Russian throne.
+1814|february1eruptionofmayonvolcano	Mount Mayon in the Philippines erupts catastrophically, burying the town of Cagsawa.
+1980|thetheshiphousingpirateradiostationradiocarolinesinksof	The Mi Amigo, the ship housing pirate radio station Radio Caroline, sinks off the English coast.

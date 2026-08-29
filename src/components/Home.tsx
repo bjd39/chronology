@@ -1,20 +1,22 @@
 import type { Store } from "../types";
-import { dailyStats } from "../game/storage";
+import { dailyStats, bestSuddenRun, recordOf, averageOf } from "../game/storage";
 import { todayKey } from "../game/format";
-import { MAX_DAILY_SCORE } from "../game/scoring";
+import { MAX_DAILY_SCORE, suddenLevel } from "../game/scoring";
+import { THEMES, themeSize } from "../game/themes";
 
 interface Props {
   store: Store;
   onPlayDaily: () => void;
   onPlaySudden: () => void;
+  onPlayPack: (themeId: string) => void;
 }
 
-export default function Home({ store, onPlayDaily, onPlaySudden }: Props) {
+export default function Home({ store, onPlayDaily, onPlaySudden, onPlayPack }: Props) {
   const key = todayKey();
   const played = Boolean(store.daily[key]);
   const stats = dailyStats(store, key);
-  const avgSudden =
-    store.suddenGames > 0 ? (store.suddenTotalRounds / store.suddenGames).toFixed(1) : "—";
+  const best = bestSuddenRun(store);
+  const lastLevel = suddenLevel(store.lastSuddenPct);
 
   return (
     <div className="screen home">
@@ -36,15 +38,35 @@ export default function Home({ store, onPlayDaily, onPlaySudden }: Props) {
           <span className="mode-icon">💀</span>
           <span className="mode-title">Sudden death</span>
           <span className="mode-desc">
-            Endless events. One miss over 10% and it's over.
+            Endless events. Pick your margin — {lastLevel.pct}% is {lastLevel.label.toLowerCase()} —
+            and see how far you get.
           </span>
           <span className="mode-cta">
-            {store.suddenBest > 0 ? `Best: ${store.suddenBest} rounds →` : "Start a run →"}
+            {best ? `Best: ${best.rounds} rounds at ${best.pct}% →` : "Start a run →"}
           </span>
         </button>
       </div>
 
-      {(stats.played > 0 || store.suddenGames > 0) && (
+      <h2 className="section-heading">Themed packs</h2>
+      <p className="section-note">Five events from one corner of history. Play as often as you like.</p>
+      <div className="pack-grid">
+        {THEMES.map((t) => {
+          const record = recordOf(store.packs, t.id);
+          return (
+            <button key={t.id} className="pack-card" onClick={() => onPlayPack(t.id)}>
+              <span className="pack-emoji">{t.emoji}</span>
+              <span className="pack-name">{t.label}</span>
+              <span className="pack-meta">
+                {record.games > 0
+                  ? `Best ${record.best}/${MAX_DAILY_SCORE}`
+                  : `${themeSize(t.id)} events`}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {(stats.played > 0 || best !== null) && (
         <div className="stats-strip">
           {stats.played > 0 && (
             <>
@@ -54,10 +76,13 @@ export default function Home({ store, onPlayDaily, onPlaySudden }: Props) {
               <Stat label="Best day" value={stats.bestTotal} />
             </>
           )}
-          {store.suddenGames > 0 && (
+          {best !== null && (
             <>
-              <Stat label="SD best" value={store.suddenBest} />
-              <Stat label="SD avg" value={avgSudden} />
+              <Stat label={`SD best (${best.pct}%)`} value={best.rounds} />
+              <Stat
+                label={`SD avg (${best.pct}%)`}
+                value={averageOf(recordOf(store.sudden, String(best.pct)))}
+              />
             </>
           )}
         </div>

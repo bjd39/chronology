@@ -1,23 +1,48 @@
-import type { Store, DailyResult } from "../types";
+import type { Store, DailyResult, RunRecord } from "../types";
+import { DEFAULT_SUDDEN_PCT } from "./scoring";
 
 const KEY = "chronology-store";
 
 const EMPTY: Store = {
-  v: 1,
+  v: 2,
   daily: {},
-  suddenBest: 0,
-  suddenGames: 0,
-  suddenTotalRounds: 0,
+  sudden: {},
+  packs: {},
+  lastSuddenPct: DEFAULT_SUDDEN_PCT,
+  lastTheme: "",
 };
+
+// v1 kept a single sudden-death record, from before tolerance was selectable.
+interface StoreV1 {
+  suddenBest?: number;
+  suddenGames?: number;
+  suddenTotalRounds?: number;
+}
+
+function migrate(raw: Store & StoreV1): Store {
+  const store: Store = { ...EMPTY, ...raw, v: EMPTY.v };
+  store.daily = raw.daily ?? {};
+  store.sudden = raw.sudden ?? {};
+  store.packs = raw.packs ?? {};
+  // Old runs were all played at the 10% tolerance — file them under that level.
+  if (raw.suddenGames && !store.sudden[String(DEFAULT_SUDDEN_PCT)]) {
+    store.sudden[String(DEFAULT_SUDDEN_PCT)] = {
+      best: raw.suddenBest ?? 0,
+      games: raw.suddenGames,
+      total: raw.suddenTotalRounds ?? 0,
+    };
+  }
+  return store;
+}
 
 export function loadStore(): Store {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return { ...EMPTY, ...JSON.parse(raw) };
+    if (raw) return migrate(JSON.parse(raw));
   } catch {
     // corrupted — start fresh
   }
-  return { ...EMPTY };
+  return { ...EMPTY, daily: {}, sudden: {}, packs: {} };
 }
 
 export function saveStore(store: Store): void {
@@ -28,6 +53,17 @@ export function saveStore(store: Store): void {
   }
 }
 
+export const EMPTY_RECORD: RunRecord = { best: 0, games: 0, total: 0 };
+
+export function recordOf(bucket: Record<string, RunRecord>, key: string): RunRecord {
+  return bucket[key] ?? EMPTY_RECORD;
+}
+
+/** Mean rounds/points per game, or "—" when the bucket is empty. */
+export function averageOf(record: RunRecord): string {
+  return record.games > 0 ? (record.total / record.games).toFixed(1) : "—";
+}
+
 export function recordDaily(key: string, result: DailyResult): Store {
   const store = loadStore();
   store.daily[key] = result;
@@ -35,13 +71,37 @@ export function recordDaily(key: string, result: DailyResult): Store {
   return store;
 }
 
-export function recordSuddenDeath(rounds: number): Store {
+function tally(bucket: Record<string, RunRecord>, key: string, value: number): void {
+  const cur = bucket[key] ?? { best: 0, games: 0, total: 0 };
+  bucket[key] = {
+    best: Math.max(cur.best, value),
+    games: cur.games + 1,
+    total: cur.total + value,
+  };
+}
+
+/** Record a finished sudden-death run at a given tolerance. */
+export function recordSuddenDeath(pct: number, rounds: number): Store {
   const store = loadStore();
-  store.suddenGames += 1;
-  store.suddenTotalRounds += rounds;
-  if (rounds > store.suddenBest) store.suddenBest = rounds;
+  tally(store.sudden, String(pct), rounds);
+  store.lastSuddenPct = pct;
   saveStore(store);
   return store;
+}
+
+/** Record a finished themed pack (score out of MAX_DAILY_SCORE). */
+export function recordPack(themeId: string, score: number): Store {
+  const store = loadStore();
+  tally(store.packs, themeId, score);
+  store.lastTheme = themeId;
+  saveStore(store);
+  return store;
+}
+
+export function rememberSuddenPct(pct: number): void {
+  const store = loadStore();
+  store.lastSuddenPct = pct;
+  saveStore(store);
 }
 
 // --- Derived stats ---
@@ -110,4 +170,17 @@ export function dailyStats(store: Store, todayKey: string): DailyStats {
     currentStreak,
     maxStreak,
   };
+}
+
+/** The player's best sudden-death run at any tolerance, for the home screen. */
+export function bestSuddenRun(store: Store): { pct: number; rounds: number } | null {
+  let bestPct = 0;
+  let bestRounds = 0;
+  for (const [pct, rec] of Object.entries(store.sudden)) {
+    if (rec.best > bestRounds) {
+      bestRounds = rec.best;
+      bestPct = Number(pct);
+    }
+  }
+  return bestRounds > 0 ? { pct: bestPct, rounds: bestRounds } : null;
 }

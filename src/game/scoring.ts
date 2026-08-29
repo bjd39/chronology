@@ -10,11 +10,34 @@ export const REF_YEAR = 2026;
 // within ~15% of the true "how long ago" scores ~75, and within ~30% scores ~55.
 export const DAILY_SPREAD = 0.3;
 
-// Sudden-death: a relative error above this ends the game.
-export const SUDDEN_DEATH_THRESHOLD = 0.1;
-
 export const DAILY_QUESTIONS = 5;
 export const MAX_DAILY_SCORE = DAILY_QUESTIONS * 100;
+
+/**
+ * Sudden death tolerance. A run ends the first time a guess misses by more than
+ * the chosen relative error, so a smaller percentage is a harder game. The
+ * percentage is part of the result — "12 rounds at 5%" is a very different claim
+ * from "12 rounds at 20%" — so it is shown in the UI and in the share text.
+ */
+export interface SuddenLevel {
+  pct: number; // whole percent; also the stable storage key (String(pct))
+  label: string;
+  blurb: string;
+}
+
+export const SUDDEN_LEVELS: SuddenLevel[] = [
+  { pct: 25, label: "Gentle", blurb: "Room to be roughly right." },
+  { pct: 15, label: "Relaxed", blurb: "A comfortable margin." },
+  { pct: 10, label: "Standard", blurb: "The classic run." },
+  { pct: 5, label: "Hard", blurb: "Close enough won't cut it." },
+  { pct: 2, label: "Brutal", blurb: "Near-exact years only." },
+];
+
+export const DEFAULT_SUDDEN_PCT = 10;
+
+export function suddenLevel(pct: number): SuddenLevel {
+  return SUDDEN_LEVELS.find((l) => l.pct === pct) ?? SUDDEN_LEVELS[2];
+}
 
 /** Years before the reference present. Always >= 1 for our historical events. */
 export function yearsAgo(signedYear: number): number {
@@ -38,7 +61,12 @@ export function dailyScore(guess: number, answer: number): number {
   return Math.round(score);
 }
 
-/** Whether a guess survives a sudden-death round. */
-export function survives(guess: number, answer: number): boolean {
-  return relativeError(guess, answer) <= SUDDEN_DEATH_THRESHOLD;
+/** Whether a guess survives a sudden-death round at the given tolerance (percent). */
+export function survives(guess: number, answer: number, pct: number): boolean {
+  return relativeError(guess, answer) <= pct / 100;
+}
+
+/** The window of years that would survive at this tolerance — shown as a hint. */
+export function toleranceYears(answer: number, pct: number): number {
+  return Math.floor((Math.max(yearsAgo(answer), 1) * pct) / 100);
 }

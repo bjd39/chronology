@@ -1,5 +1,7 @@
 // Wordle-style shareable text built from emoji, plus a link to the game.
 
+import { MAX_DAILY_SCORE } from "./scoring";
+
 // The live URL, derived from wherever the app is actually served.
 function gameUrl(): string {
   if (typeof location !== "undefined") return location.origin + location.pathname;
@@ -21,12 +23,27 @@ export function dailyShareText(dateKey: string, scores: number[], total: number)
   return `Chronology ${dateKey}\n${total}/${scores.length * 100}\n${squares}\n${perRound}\n${gameUrl()}`;
 }
 
-export function suddenDeathShareText(rounds: number): string {
+/**
+ * Sudden death results are only comparable alongside the tolerance they were set
+ * at — twelve rounds at 2% is a different game from twelve at 25% — so the
+ * percentage (and the pack, if the run was themed) is part of the claim.
+ */
+export function suddenDeathShareText(rounds: number, pct: number, themeLabel?: string): string {
   // A row of skulls capped so the message stays compact.
   const capped = Math.min(rounds, 20);
   const bar = "💀".repeat(Math.max(1, Math.ceil(capped / 2)));
   const more = rounds > capped ? "…" : "";
-  return `Chronology ☠️ Sudden Death\nSurvived ${rounds} ${rounds === 1 ? "round" : "rounds"} ${bar}${more}\n${gameUrl()}`;
+  const scope = themeLabel ? ` · ${themeLabel}` : "";
+  return (
+    `Chronology ☠️ Sudden Death${scope}\n` +
+    `Survived ${rounds} ${rounds === 1 ? "round" : "rounds"} at ${pct}% ${bar}${more}\n` +
+    gameUrl()
+  );
+}
+
+export function packShareText(themeLabel: string, emoji: string, scores: number[], total: number): string {
+  const squares = scores.map(scoreSquare).join("");
+  return `Chronology ${emoji} ${themeLabel}\n${total}/${MAX_DAILY_SCORE}\n${squares}\n${gameUrl()}`;
 }
 
 /** Copy to clipboard, falling back to the Web Share sheet on mobile. */

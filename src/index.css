@@ -411,3 +411,104 @@ main { flex: 1; }
   .big-score { font-size: 3.2rem; }
   .app { padding: 1rem 1rem 1.5rem; }
 }
+
+/* ---- Sudden-death setup: tolerance and pack pickers ---- */
+
+.setup-card { text-align: left; }
+.setup-heading {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0.25rem 0 0.5rem;
+}
+.setup-heading + .setup-note { margin-top: -0.25rem; }
+.setup-note {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 0.9rem;
+}
+.setup-blurb {
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-style: italic;
+  margin: 0.6rem 0 0.9rem;
+}
+
+.level-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(4.4rem, 1fr));
+  gap: 0.4rem;
+}
+.level-chip {
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.5rem 0.3rem;
+  background: var(--bg-subtle);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.level-chip:hover { border-color: var(--accent); }
+.level-chip.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg-card);
+}
+.level-pct { font-size: 1.15rem; font-weight: 600; }
+.level-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+.pack-row { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.75rem; }
+.pack-chip {
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.35rem 0.7rem;
+  background: var(--bg-subtle);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.pack-chip:hover { border-color: var(--accent); }
+.pack-chip.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg-card);
+}
+
+.btn-primary.wide { display: block; width: 100%; margin-top: 0.5rem; }
+.tolerance-tag { color: var(--text-muted); font-weight: 400; }
+
+/* ---- Themed packs on the home screen ---- */
+
+.section-heading {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 2rem 0 0.25rem;
+}
+.section-note { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.9rem; }
+
+.pack-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.6rem;
+}
+.pack-card {
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.7rem 0.8rem;
+  background: var(--bg-card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.pack-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.pack-emoji { font-size: 1.3rem; line-height: 1.2; }
+.pack-name { font-weight: 600; font-size: 0.95rem; }
+.pack-meta { color: var(--text-muted); font-size: 0.8rem; }

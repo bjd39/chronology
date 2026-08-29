@@ -3,12 +3,14 @@ import { loadStore } from "./game/storage";
 import Home from "./components/Home";
 import DailyGame from "./components/DailyGame";
 import SuddenDeath from "./components/SuddenDeath";
+import PackGame from "./components/PackGame";
 import Faq from "./components/Faq";
 
-type Screen = "home" | "daily" | "sudden";
+type Screen = "home" | "daily" | "sudden" | "pack";
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("home");
+  const [packTheme, setPackTheme] = useState("");
   const [store, setStore] = useState(loadStore);
   const [showFaq, setShowFaq] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">(() => {
@@ -51,6 +53,10 @@ export default function App() {
             store={store}
             onPlayDaily={() => setScreen("daily")}
             onPlaySudden={() => setScreen("sudden")}
+            onPlayPack={(themeId) => {
+              setPackTheme(themeId);
+              setScreen("pack");
+            }}
           />
         )}
         {screen === "daily" && (
@@ -58,6 +64,13 @@ export default function App() {
         )}
         {screen === "sudden" && (
           <SuddenDeath onExit={() => setScreen("home")} onStoreChange={refreshStore} />
+        )}
+        {screen === "pack" && (
+          <PackGame
+            themeId={packTheme}
+            onExit={() => setScreen("home")}
+            onStoreChange={refreshStore}
+          />
         )}
       </main>
 

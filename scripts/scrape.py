@@ -44,7 +44,16 @@ def events_section(wt):
             out.append(ln)
     return "\n".join(out)
 
+# Ship-name templates ({{SS|Valencia}}, {{HMS|Hood|51}}) carry the *subject* of the
+# sentence. The generic template strip below would delete them, leaving orphans like
+# "The strikes a reef off Vancouver Island", so expand them first.
+SHIP_TEMPLATE = re.compile(
+    r"\{\{\s*(SS|MV|RMS|HMS|HMAS|HMCS|USS|MS|SMS|RFA|USNS)\s*\|\s*([^|}]+)[^}]*\}\}",
+    re.IGNORECASE)
+
+
 def strip_markup(s):
+    s = SHIP_TEMPLATE.sub(lambda m: f"{m.group(1).upper()} {m.group(2).strip()}", s)
     # references, comments
     s = re.sub(r"<ref[^>]*?/>", "", s)
     s = re.sub(r"<ref[^>]*?>.*?</ref>", "", s, flags=re.DOTALL)
@@ -67,6 +76,8 @@ def strip_markup(s):
     s = re.sub(r"<[^>]+>", "", s)
     s = s.replace("&nbsp;", " ").replace("&ndash;", "–").replace("&mdash;", "—")
     s = s.replace("&amp;", "&").replace("&quot;", '"')
+    # image markup that survived as bare text ("File:Foo.jpg thumb 240x240px caption")
+    s = re.sub(r"\s*\bFile:\S+.*$", "", s)
     # strip any orphaned markup characters left by partial links/templates
     s = s.replace("[", "").replace("]", "").replace("{", "").replace("}", "").replace("|", " ")
     # tidy whitespace and spacing before punctuation
@@ -91,7 +102,14 @@ CENTURY_RE = re.compile(
     r"^\*+\s*(?:c\.\s*)?(?:\[\[\s*)?(?:AD\s*)?(\d{1,4})(\s*BC)?\b[^:\]]*(?:\]\])?[^:]*?:\s*(.+)$"
 )
 
-def parse_century(section, default_bc):
+def parse_century(section, century, default_bc):
+    """Bullets from a century page. `century` is 1-based (the 5th century is 5).
+
+    The year is only trusted if it actually falls inside that century: some pages
+    carry tables whose rows start with a day-of-month, which otherwise parse as
+    year 2 or year 17 and file a Wars of the Roses battle under the Roman empire.
+    """
+    lo, hi = (century - 1) * 100 + 1, century * 100
     items = []
     for raw in section.split("\n"):
         ln = raw.strip()
@@ -102,6 +120,8 @@ def parse_century(section, default_bc):
             continue
         num = int(m.group(1))
         is_bc = bool(m.group(2)) or default_bc
+        if not lo <= num <= hi:
+            continue
         items.append((-num if is_bc else num, m.group(3)))
     return items
 
@@ -138,6 +158,12 @@ def finalize(desc):
     # guard against leftover fragments like "49) ..." from a bad upstream split
     if re.match(r"^[\d)\]]", s):
         return None
+    # a stripped template can eat the subject, leaving "The sinks after colliding..."
+    if re.match(r"^The (?:strikes|sinks|is|are|was|were|opens|begins|crashes|carries|,)\b", s):
+        return None
+    # or the object, leaving "Introduction of by Fibonacci." / "The, the ship ..."
+    if re.search(r"\b(?:of|and|with|to)\s+by\b|\bThe,|,\s*,", s):
+        return None
     if names_a_year(s):
         return None
     if len(s) < 20 or len(s) > 190:
@@ -158,17 +184,17 @@ def main():
 
     pages = []
     for n in range(1, 20):
-        pages.append((ordinal(n) + "_century", False))
+        pages.append((ordinal(n) + "_century", n, False))
     for n in range(1, 26):
-        pages.append((ordinal(n) + "_century_BC", True))
-    for page, is_bc in pages:
+        pages.append((ordinal(n) + "_century_BC", n, True))
+    for page, century, is_bc in pages:
         try:
             wt = fetch_wikitext(page)
         except Exception as ex:
             print(f"  FAIL {page}: {ex}", file=sys.stderr); wt = None
         if not wt:
             continue
-        items = parse_century(events_section(wt), is_bc)
+        items = parse_century(events_section(wt), century, is_bc)
         print(f"  {page}: {len(items)}", file=sys.stderr)
         all_items.extend(items)
         time.sleep(0.25)

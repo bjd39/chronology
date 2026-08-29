@@ -1,4 +1,5 @@
-import { DAILY_SPREAD, SUDDEN_DEATH_THRESHOLD, REF_YEAR } from "../game/scoring";
+import { DAILY_SPREAD, DEFAULT_SUDDEN_PCT, SUDDEN_LEVELS, REF_YEAR } from "../game/scoring";
+import { THEMES } from "../game/themes";
 
 interface Props {
   onClose: () => void;
@@ -26,9 +27,19 @@ export default function Faq({ onClose }: Props) {
           event.
         </p>
         <p>
-          <strong>Sudden death</strong> — endless random events. Miss by more than{" "}
-          {Math.round(SUDDEN_DEATH_THRESHOLD * 100)}% and the run is over. See how
-          far you can get.
+          <strong>Sudden death</strong> — endless random events. Miss by more than
+          your chosen margin and the run is over. The margin runs from{" "}
+          {SUDDEN_LEVELS[0].pct}% ({SUDDEN_LEVELS[0].label.toLowerCase()}) down to{" "}
+          {SUDDEN_LEVELS[SUDDEN_LEVELS.length - 1].pct}% (
+          {SUDDEN_LEVELS[SUDDEN_LEVELS.length - 1].label.toLowerCase()}), and{" "}
+          {DEFAULT_SUDDEN_PCT}% is the default — so a result is always quoted with
+          it: "12 rounds at {DEFAULT_SUDDEN_PCT}%". Bests are tracked per margin.
+        </p>
+        <p>
+          <strong>Themed packs</strong> — five events from one slice of history:
+          {" "}{THEMES.slice(0, 4).map((t) => t.label).join(", ")} and{" "}
+          {THEMES.length - 4} more. Replayable, and you can point sudden death at a
+          pack too.
         </p>
 
         <h3>Why guessing "1850" for a Roman event isn't a disaster</h3>
@@ -58,6 +69,20 @@ export default function Faq({ onClose }: Props) {
           or halve the true age) → near 0.
         </p>
 
+        <h3>How hard is it going to be?</h3>
+        <p>
+          Every event is graded 1 (iconic) to 5 (specialist), judged against this
+          relative scale rather than raw years — knowing that an obscure Assyrian
+          king belongs somewhere in the second millennium BC is enough to survive,
+          while a 1985 event needs the right four-year window.
+        </p>
+        <p className="muted-note">
+          Daily and pack rounds walk up that ladder: the first question is drawn
+          from the 1s and 2s, the last from the 4s and 5s. Sudden death does the
+          same as your streak grows, so a run ends when you run out of knowledge
+          rather than luck.
+        </p>
+
         <h3>Your stats</h3>
         <p>
           Streaks, averages and best runs are saved on this device only (in local
@@ -66,9 +91,10 @@ export default function Faq({ onClose }: Props) {
 
         <h3>Where the events come from</h3>
         <p className="muted-note">
-          Curated from Wikipedia's century and year pages. A few thousand events, so
-          expect the occasional obscure one — that's what the partial-credit scoring
-          is for.
+          Scraped from Wikipedia's century and year pages, then reviewed by hand:
+          events that were vague ("this volcano erupted"), self-answering,
+          duplicated or mangled by the scraper were thrown out, and everything that
+          survived was graded for difficulty. Just over three thousand remain.
         </p>
       </div>
     </div>
