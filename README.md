@@ -33,6 +33,34 @@ npm test         # scoring, corpus and sampling tests
 Pushing to `main` builds and deploys via `.github/workflows/deploy.yml`. The Vite
 `base` is `/chronology/` — set it to match the repo name if you fork/rename.
 
+## Link previews
+
+What WhatsApp, iMessage and Slack show when someone pastes a link comes entirely
+from the Open Graph tags in `index.html` — scrapers do not run our JavaScript, so
+anything a preview shows has to be in the served HTML. Two consequences worth
+remembering:
+
+- **The URLs in those tags are absolute and hardcoded.** If the site ever moves,
+  `og:url` and `og:image` need changing by hand alongside `base` in
+  `vite.config.ts`; nothing will fail loudly if you forget, the preview just goes
+  blank.
+- **Previews are cached hard, per URL.** WhatsApp will keep serving an old card
+  for a link it has seen before, so test with a fresh URL (add `?x=1`) rather than
+  concluding a change did not work.
+
+The preview image is `public/og.png` (1200×630), rendered from `scripts/og.html`
+so the artwork stays editable rather than being an opaque binary. Edit the HTML,
+then re-render:
+
+```bash
+npm i -D playwright && npx playwright install chromium   # once
+node scripts/render-og.mjs
+```
+
+Keep it well under a megabyte — WhatsApp silently drops images it considers too
+large. The colours in `scripts/og.html` are copied from `:root` in
+`src/index.css`; if the palette changes, change them there too and re-render.
+
 ## Versioning
 
 The footer carries a build stamp — `v0.3.0 · e153e78` — so what is on screen can be

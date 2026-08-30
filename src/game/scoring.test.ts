@@ -11,7 +11,7 @@ import {
 } from "./scoring";
 import { EVENTS, dailyEvents, makeDeck, packEvents, difficultyCap } from "./events";
 import { THEMES, themePool, themeSize } from "./themes";
-import { suddenDeathShareText } from "./share";
+import { suddenDeathShareText, dailyShareText, packShareText, scoreSquare } from "./share";
 
 describe("relativeError", () => {
   it("is zero for a perfect guess", () => {
@@ -63,6 +63,26 @@ describe("survives (sudden death)", () => {
     expect(pcts).toContain(DEFAULT_SUDDEN_PCT);
     expect(suddenLevel(DEFAULT_SUDDEN_PCT).pct).toBe(DEFAULT_SUDDEN_PCT);
     expect(suddenLevel(999).pct).toBe(DEFAULT_SUDDEN_PCT); // unknown falls back
+  });
+});
+
+describe("score squares", () => {
+  it("gives a perfect round its own mark", () => {
+    expect(scoreSquare(100)).toBe("🎉");
+    expect(scoreSquare(99)).toBe("🟩");
+  });
+  it("steps down through the bands", () => {
+    expect([100, 95, 80, 50, 30, 5].map(scoreSquare)).toEqual([
+      "🎉", "🟩", "🟨", "🟧", "🟥", "⬛",
+    ]);
+  });
+  it("an exact guess earns it, a miss does not", () => {
+    expect(scoreSquare(dailyScore(1066, 1066))).toBe("🎉");
+    expect(scoreSquare(dailyScore(1000, 1066))).not.toBe("🎉");
+  });
+  it("reaches the share text of both scored modes", () => {
+    expect(dailyShareText("2026-08-30", [100, 96, 76, 88, 83], 443)).toContain("🎉🟩🟨🟨🟨");
+    expect(packShareText("Rome & Byzantium", "🏛️", [100, 40, 40, 40, 40], 260)).toContain("🎉");
   });
 });
 

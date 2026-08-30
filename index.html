@@ -5,7 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#8987;</text></svg>">
     <title>Chronology — guess the year</title>
-    <meta name="description" content="Guess the year historical events happened. A daily challenge and a sudden-death mode." />
+    <meta name="description" content="Guess the year historical events happened. A daily puzzle, an endless sudden-death mode, and themed packs from Rome to the Cold War." />
+
+    <!--
+      Link previews (WhatsApp, iMessage, Slack, X). These must be absolute URLs:
+      scrapers do not resolve relative paths, and none of them run our JavaScript,
+      so everything a preview shows has to be here in the served HTML.
+      The host has to match where this is deployed — keep it in step with `base`
+      in vite.config.ts. See "Link previews" in the README.
+    -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Chronology" />
+    <meta property="og:title" content="Chronology — guess the year" />
+    <meta property="og:description" content="Guess the year historical events happened. A daily puzzle, an endless sudden-death mode, and themed packs from Rome to the Cold War." />
+    <meta property="og:url" content="https://bjd39.github.io/chronology/" />
+    <meta property="og:image" content="https://bjd39.github.io/chronology/og.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Chronology — guess the year history happened." />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
     <div id="root"></div>

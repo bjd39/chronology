@@ -8,8 +8,12 @@ function gameUrl(): string {
   return "";
 }
 
-/** Map a per-question score (0..100) to a coloured square. */
-function scoreSquare(score: number): string {
+/**
+ * Map a per-question score (0..100) to a square. A full 100 gets its own mark —
+ * it is the one result worth spotting in someone else's row of squares.
+ */
+export function scoreSquare(score: number): string {
+  if (score >= 100) return "🎉";
   if (score >= 90) return "🟩";
   if (score >= 70) return "🟨";
   if (score >= 45) return "🟧";

@@ -1,0 +1,71 @@
+<!doctype html>
+<!--
+  Source artwork for public/og.png, the link-preview image (Open Graph).
+  Rendered at 1200x630 with a headless browser — see "Link previews" in the README.
+  Colours are copied from :root in src/index.css; keep them in step.
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      :root {
+        --bg: #f6f2ea;
+        --text: #1d1a15;
+        --text-muted: #6d6559;
+        --accent: #8a3324;
+        --border: #e4dccd;
+        --good: #3f7d4e;
+        --warn: #c98a1e;
+        --orange: #d97a34;
+        --bad: #b23b2e;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1200px; height: 630px; }
+      body {
+        background: var(--bg);
+        font-family: "Bitstream Charter", "Liberation Serif", serif;
+        color: var(--text);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 34px;
+        /* A hairline frame keeps the card from bleeding into a dark chat bubble. */
+        border: 10px solid var(--border);
+      }
+      .wordmark {
+        font-size: 148px;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        line-height: 1;
+      }
+      .wordmark::first-letter { color: var(--accent); }
+      .tagline {
+        font-size: 46px;
+        font-style: italic;
+        color: var(--text-muted);
+      }
+      .dots { display: flex; gap: 16px; margin-top: 6px; }
+      .dot { width: 54px; height: 54px; border-radius: 10px; }
+      .modes {
+        font-size: 27px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wordmark">Chronology</div>
+    <div class="tagline">Guess the year history happened.</div>
+    <div class="dots">
+      <span class="dot" style="background: var(--good)"></span>
+      <span class="dot" style="background: var(--warn)"></span>
+      <span class="dot" style="background: var(--good)"></span>
+      <span class="dot" style="background: var(--orange)"></span>
+      <span class="dot" style="background: var(--bad)"></span>
+    </div>
+    <div class="modes">Daily · Sudden death · Themed packs</div>
+  </body>
+</html>
