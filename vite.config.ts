@@ -26,6 +26,7 @@ export default defineConfig({
   plugins: [react()],
   base: '/chronology/',
   define: {
+    // Bump package.json in the commit that earns it — see "Versioning" in the README.
     __APP_VERSION__: JSON.stringify(pkg.version),
     __APP_COMMIT__: JSON.stringify(commit()),
     __APP_BUILT__: JSON.stringify(new Date().toISOString().slice(0, 10)),

@@ -46,6 +46,35 @@ matched to what is in the repo. The two halves are set differently on purpose:
 
 Hovering the stamp shows the build date.
 
+### Keeping it current
+
+Only the version half needs looking after — the commit half takes care of itself,
+because nothing ever writes it down. There is one rule:
+
+> **Bump `package.json` in the same commit as the change that earns the bump.**
+
+Do it as part of the work, not as a release chore afterwards, and it cannot drift.
+
+```bash
+npm version patch --no-git-tag-version   # 0.3.0 -> 0.3.1  fixes, copy, data tweaks
+npm version minor --no-git-tag-version   # 0.3.0 -> 0.4.0  a new mode, or a rule change
+```
+
+`--no-git-tag-version` keeps npm from making its own commit and tag, so the change
+lands in yours. Use the command rather than editing the field by hand — the version
+appears in `package-lock.json` too, and `npm version` keeps the two in step. Roughly: a **minor** bump for anything a player would notice as new
+or different — a mode, a scoring rule, a corpus rebuild; a **patch** for everything
+else. Nothing is versioned but the game, so there is no compatibility contract to
+honour here; the number is a label, not a promise.
+
+If the number is ever stale, it is only ever *behind*, and the commit beside it
+still says exactly what is deployed — which is the half that matters when something
+looks wrong. If hand-bumping turns out to be too much discipline, the honest
+alternative is to drop the semver half and stamp the commit count instead
+(`git rev-list --count HEAD`), which needs `fetch-depth: 0` on the checkout step in
+`.github/workflows/deploy.yml` — CI clones shallow by default and would otherwise
+count 1 forever.
+
 ## The event corpus
 
 `src/data/events.json` (~3,200 events) is built in two stages.
