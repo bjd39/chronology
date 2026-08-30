@@ -33,6 +33,19 @@ npm test         # scoring, corpus and sampling tests
 Pushing to `main` builds and deploys via `.github/workflows/deploy.yml`. The Vite
 `base` is `/chronology/` — set it to match the repo name if you fork/rename.
 
+## Versioning
+
+The footer carries a build stamp — `v0.3.0 · e153e78` — so what is on screen can be
+matched to what is in the repo. The two halves are set differently on purpose:
+
+- the **version** is the `version` field in `package.json`, bumped by hand when a
+  release is worth naming (`0.1` the original game, `0.2` the scoring and scraper
+  pass, `0.3` selectable margins, themed packs and the curated corpus);
+- the **commit** is injected at build time by `vite.config.ts`, from `GITHUB_SHA`
+  in CI or `git rev-parse` locally, so it is always exactly what was deployed.
+
+Hovering the stamp shows the build date.
+
 ## The event corpus
 
 `src/data/events.json` (~3,200 events) is built in two stages.

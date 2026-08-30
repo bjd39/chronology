@@ -101,7 +101,21 @@ main { flex: 1; }
 
 .app-footer {
   margin-top: 2rem;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* Build stamp: quiet enough to ignore, precise enough to match what is live
+   against what is in the repo. */
+.version {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+  cursor: default;
 }
 
 .screen { animation: fade 0.25s ease; }

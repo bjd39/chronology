@@ -80,6 +80,9 @@ export default function App() {
         <button className="btn-text tiny" onClick={() => setShowFaq(true)}>
           How scoring works
         </button>
+        <span className="version" title={`Built ${__APP_BUILT__} from ${__APP_COMMIT__}`}>
+          v{__APP_VERSION__} · {__APP_COMMIT__}
+        </span>
       </footer>
     </div>
   );
