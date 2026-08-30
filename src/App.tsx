@@ -4,9 +4,10 @@ import Home from "./components/Home";
 import DailyGame from "./components/DailyGame";
 import SuddenDeath from "./components/SuddenDeath";
 import PackGame from "./components/PackGame";
+import History from "./components/History";
 import Faq from "./components/Faq";
 
-type Screen = "home" | "daily" | "sudden" | "pack";
+type Screen = "home" | "daily" | "sudden" | "pack" | "history";
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("home");
@@ -57,6 +58,7 @@ export default function App() {
               setPackTheme(themeId);
               setScreen("pack");
             }}
+            onShowHistory={() => setScreen("history")}
           />
         )}
         {screen === "daily" && (
@@ -64,6 +66,9 @@ export default function App() {
         )}
         {screen === "sudden" && (
           <SuddenDeath onExit={() => setScreen("home")} onStoreChange={refreshStore} />
+        )}
+        {screen === "history" && (
+          <History store={store} onExit={() => setScreen("home")} />
         )}
         {screen === "pack" && (
           <PackGame

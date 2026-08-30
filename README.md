@@ -25,8 +25,14 @@ in-app FAQ.
 
 ## Stack
 
-Vite + React + TypeScript, deployed to GitHub Pages. Stats are stored locally in the
-browser (`localStorage`). No backend.
+Vite + React + TypeScript, deployed to GitHub Pages. No backend: stats and history
+live in the browser's `localStorage`, on the player's device only.
+
+Every finished round is kept with the guesses beside the answers, so the history
+screen can show what you said against what was true. Dailies are kept indefinitely
+(the streak depends on them); sudden-death runs and packs go into a log capped at
+`MAX_RUN_LOG`. If a save ever hits the storage quota it sheds that log oldest-first
+and retries, rather than losing the streak along with it.
 
 ```bash
 npm install

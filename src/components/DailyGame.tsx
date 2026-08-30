@@ -4,10 +4,12 @@ import { dailyEvents } from "../game/events";
 import { dailyScore, relativeError, DAILY_QUESTIONS, MAX_DAILY_SCORE } from "../game/scoring";
 import { formatYear, formatGap, todayKey } from "../game/format";
 import { recordDaily, loadStore } from "../game/storage";
+import { toGuessRow } from "../game/history";
 import { dailyShareText } from "../game/share";
 import YearInput from "./YearInput";
 import ShareButton from "./ShareButton";
 import ScoreDots from "./ScoreDots";
+import Recap from "./Recap";
 
 interface Props {
   onExit: () => void;
@@ -40,7 +42,12 @@ export default function DailyGame({ onExit, onStoreChange }: Props) {
     if (index + 1 >= DAILY_QUESTIONS) {
       const scores = guesses.map((g) => g.score);
       const total = scores.reduce((a, b) => a + b, 0);
-      recordDaily(key, { scores, total, playedAt: new Date().toISOString() });
+      recordDaily(key, {
+        scores,
+        total,
+        playedAt: new Date().toISOString(),
+        rounds: guesses.map(toGuessRow),
+      });
       onStoreChange();
       setFinished(true);
     } else {
@@ -64,16 +71,13 @@ export default function DailyGame({ onExit, onStoreChange }: Props) {
           </h2>
           <ScoreDots scores={result.scores} />
 
-          {guesses.length === DAILY_QUESTIONS && (
-            <ul className="recap">
-              {guesses.map((g, i) => (
-                <li key={i}>
-                  <span className="recap-year">{formatYear(g.event.y)}</span>
-                  <span className="recap-event">{g.event.e}</span>
-                  <span className="recap-score">{g.score}</span>
-                </li>
-              ))}
-            </ul>
+          {result.rounds ? (
+            <Recap rounds={result.rounds} />
+          ) : (
+            <p className="muted-note center">
+              You played this one before Chronology kept your guesses, so only the
+              score survives.
+            </p>
           )}
           {guesses.length !== DAILY_QUESTIONS && (
             <p className="muted-note center">

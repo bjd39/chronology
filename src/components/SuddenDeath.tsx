@@ -4,6 +4,7 @@ import { makeDeck, randomSeed, type Deck } from "../game/events";
 import { THEMES, themeById, themeLabel, themePool, themeSize } from "../game/themes";
 import {
   survives,
+  dailyScore,
   relativeError,
   toleranceYears,
   suddenLevel,
@@ -61,7 +62,9 @@ export default function SuddenDeath({ onExit, onStoreChange }: Props) {
       setSurvived((s) => s + 1);
       setPhase("survived");
     } else {
-      recordSuddenDeath(pct, survived_);
+      recordSuddenDeath(pct, survived_, themeId, [
+        { y: event.y, e: event.e, g: signed, s: dailyScore(signed, event.y) },
+      ]);
       onStoreChange();
       setPhase("dead");
     }

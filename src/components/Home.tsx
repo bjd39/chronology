@@ -9,13 +9,21 @@ interface Props {
   onPlayDaily: () => void;
   onPlaySudden: () => void;
   onPlayPack: (themeId: string) => void;
+  onShowHistory: () => void;
 }
 
-export default function Home({ store, onPlayDaily, onPlaySudden, onPlayPack }: Props) {
+export default function Home({
+  store,
+  onPlayDaily,
+  onPlaySudden,
+  onPlayPack,
+  onShowHistory,
+}: Props) {
   const key = todayKey();
   const played = Boolean(store.daily[key]);
   const stats = dailyStats(store, key);
   const best = bestSuddenRun(store);
+  const played_ = Object.keys(store.daily).length + store.runs.length;
   const lastLevel = suddenLevel(store.lastSuddenPct);
 
   return (
@@ -65,6 +73,12 @@ export default function Home({ store, onPlayDaily, onPlaySudden, onPlayPack }: P
           );
         })}
       </div>
+
+      {played_ > 0 && (
+        <button className="btn-text history-link" onClick={onShowHistory}>
+          See your history →
+        </button>
+      )}
 
       {(stats.played > 0 || best !== null) && (
         <div className="stats-strip">

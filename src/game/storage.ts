@@ -1,13 +1,21 @@
-import type { Store, DailyResult, RunRecord } from "../types";
+import type { Store, DailyResult, RunRecord, RunLog, GuessRow } from "../types";
 import { DEFAULT_SUDDEN_PCT } from "./scoring";
 
 const KEY = "chronology-store";
 
+/**
+ * How many sudden-death runs and pack rounds to keep in full. Dailies are never
+ * trimmed — they are one per calendar day and the streak depends on them — but
+ * these two can be replayed all evening, so the log is capped.
+ */
+export const MAX_RUN_LOG = 200;
+
 const EMPTY: Store = {
-  v: 2,
+  v: 3,
   daily: {},
   sudden: {},
   packs: {},
+  runs: [],
   lastSuddenPct: DEFAULT_SUDDEN_PCT,
   lastTheme: "",
 };
@@ -24,6 +32,7 @@ function migrate(raw: Store & StoreV1): Store {
   store.daily = raw.daily ?? {};
   store.sudden = raw.sudden ?? {};
   store.packs = raw.packs ?? {};
+  store.runs = Array.isArray(raw.runs) ? raw.runs : [];
   // Old runs were all played at the 10% tolerance — file them under that level.
   if (raw.suddenGames && !store.sudden[String(DEFAULT_SUDDEN_PCT)]) {
     store.sudden[String(DEFAULT_SUDDEN_PCT)] = {
@@ -42,14 +51,38 @@ export function loadStore(): Store {
   } catch {
     // corrupted — start fresh
   }
-  return { ...EMPTY, daily: {}, sudden: {}, packs: {} };
+  return { ...EMPTY, daily: {}, sudden: {}, packs: {}, runs: [] };
 }
 
 export function saveStore(store: Store): void {
   try {
     localStorage.setItem(KEY, JSON.stringify(store));
+    return;
   } catch {
-    // storage unavailable (private mode) — degrade gracefully
+    // Out of quota, most likely. Losing the whole save — streaks and all —
+    // because the history got long would be a poor trade, so shed the history
+    // oldest-first and keep trying.
+  }
+  const trimmed: Store = { ...store, runs: [...store.runs] };
+  while (trimmed.runs.length > 0) {
+    trimmed.runs.splice(0, Math.max(1, Math.ceil(trimmed.runs.length / 2)));
+    try {
+      localStorage.setItem(KEY, JSON.stringify(trimmed));
+      store.runs = trimmed.runs;
+      return;
+    } catch {
+      // still too big — keep shedding
+    }
+  }
+  try {
+    // Last resort: drop the per-round detail from the dailies but keep the scores.
+    const bare: Store = { ...trimmed, daily: {} };
+    for (const [k, r] of Object.entries(store.daily)) {
+      bare.daily[k] = { scores: r.scores, total: r.total, playedAt: r.playedAt };
+    }
+    localStorage.setItem(KEY, JSON.stringify(bare));
+  } catch {
+    // storage genuinely unavailable (private mode) — degrade gracefully
   }
 }
 
@@ -80,20 +113,47 @@ function tally(bucket: Record<string, RunRecord>, key: string, value: number): v
   };
 }
 
+function logRun(store: Store, run: RunLog): void {
+  store.runs.push(run);
+  if (store.runs.length > MAX_RUN_LOG) {
+    store.runs.splice(0, store.runs.length - MAX_RUN_LOG);
+  }
+}
+
 /** Record a finished sudden-death run at a given tolerance. */
-export function recordSuddenDeath(pct: number, rounds: number): Store {
+export function recordSuddenDeath(
+  pct: number,
+  rounds: number,
+  themeId: string,
+  fatal: GuessRow[] = [],
+): Store {
   const store = loadStore();
   tally(store.sudden, String(pct), rounds);
   store.lastSuddenPct = pct;
+  logRun(store, {
+    at: new Date().toISOString(),
+    mode: "sudden",
+    theme: themeId,
+    pct,
+    survived: rounds,
+    rounds: fatal,
+  });
   saveStore(store);
   return store;
 }
 
 /** Record a finished themed pack (score out of MAX_DAILY_SCORE). */
-export function recordPack(themeId: string, score: number): Store {
+export function recordPack(themeId: string, score: number, rounds: GuessRow[] = []): Store {
   const store = loadStore();
   tally(store.packs, themeId, score);
   store.lastTheme = themeId;
+  logRun(store, {
+    at: new Date().toISOString(),
+    mode: "pack",
+    theme: themeId,
+    total: score,
+    rounds,
+  });
   saveStore(store);
   return store;
 }

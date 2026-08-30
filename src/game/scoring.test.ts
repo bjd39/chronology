@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import {
   dailyScore,
   relativeError,
@@ -15,6 +15,9 @@ import {
 import { EVENTS, dailyEvents, makeDeck, packEvents, difficultyCap } from "./events";
 import { THEMES, themePool, themeSize } from "./themes";
 import { suddenDeathShareText, dailyShareText, packShareText, scoreSquare } from "./share";
+import { historyEntries, toGuessRow } from "./history";
+import { loadStore, saveStore, recordDaily, recordSuddenDeath, recordPack, MAX_RUN_LOG } from "./storage";
+import type { Store, GuessRow } from "../types";
 
 describe("relativeError", () => {
   it("is zero for a perfect guess", () => {
@@ -258,5 +261,168 @@ describe("packEvents", () => {
       for (const e of picks) expect(e.t).toContain(theme.id);
       expect(picks[0].d).toBeLessThanOrEqual(picks[DAILY_QUESTIONS - 1].d);
     }
+  });
+});
+
+
+describe("history", () => {
+  const row = (y: number, g: number, s: number): GuessRow => ({ y, e: `event ${y}`, g, s });
+  const store = (over: Partial<Store>): Store => ({
+    v: 3,
+    daily: {},
+    sudden: {},
+    packs: {},
+    runs: [],
+    lastSuddenPct: 10,
+    lastTheme: "",
+    ...over,
+  });
+  const label = (id: string) => (id === "rome" ? "Rome & Byzantium" : id);
+
+  it("keeps the answer alongside the guess", () => {
+    const g = toGuessRow({
+      event: { y: 1066, e: "Battle of Hastings", d: 1, t: [] },
+      guess: 1100,
+      score: 62,
+      relError: 0.03,
+    });
+    expect(g).toEqual({ y: 1066, e: "Battle of Hastings", g: 1100, s: 62 });
+  });
+
+  it("merges dailies and runs, newest first", () => {
+    const entries = historyEntries(
+      store({
+        daily: {
+          "2026-08-29": {
+            scores: [10, 20, 30, 40, 50],
+            total: 150,
+            playedAt: "2026-08-29T09:00:00.000Z",
+            rounds: [row(1066, 1100, 10)],
+          },
+        },
+        runs: [
+          { at: "2026-08-28T09:00:00.000Z", mode: "pack", theme: "rome", total: 300, rounds: [row(-44, -50, 60)] },
+          { at: "2026-08-30T09:00:00.000Z", mode: "sudden", theme: "", pct: 5, survived: 7, rounds: [row(1969, 1970, 0)] },
+        ],
+      }),
+      label,
+    );
+    expect(entries.map((e) => e.mode)).toEqual(["sudden", "daily", "pack"]);
+    expect(entries[0].title).toBe("Sudden death · 5%");
+    expect(entries[0].result).toBe("7 rounds");
+    expect(entries[1].result).toBe("150 / 500");
+    expect(entries[2].title).toBe("Rome & Byzantium");
+  });
+
+  it("survives a daily saved before rounds were kept", () => {
+    const entries = historyEntries(
+      store({
+        daily: {
+          "2026-01-01": { scores: [50, 50, 50, 50, 50], total: 250, playedAt: "2026-01-01T09:00:00.000Z" },
+        },
+      }),
+      label,
+    );
+    expect(entries).toHaveLength(1);
+    expect(entries[0].rounds).toEqual([]);
+    expect(entries[0].result).toBe("250 / 500");
+  });
+
+  it("names a one-round sudden-death run correctly", () => {
+    const entries = historyEntries(
+      store({
+        runs: [{ at: "2026-08-30T09:00:00.000Z", mode: "sudden", theme: "", pct: 25, survived: 1, rounds: [] }],
+      }),
+      label,
+    );
+    expect(entries[0].result).toBe("1 round");
+  });
+});
+
+
+/** A localStorage good enough to migrate and overflow. */
+function fakeStorage(limit = Infinity) {
+  const data = new Map<string, string>();
+  return {
+    getItem: (k: string) => data.get(k) ?? null,
+    setItem: (k: string, v: string) => {
+      if (v.length > limit) throw new DOMException("quota", "QuotaExceededError");
+      data.set(k, v);
+    },
+    removeItem: (k: string) => void data.delete(k),
+    clear: () => data.clear(),
+    key: () => null,
+    length: 0,
+  } as unknown as Storage;
+}
+
+describe("the saved store", () => {
+  beforeEach(() => {
+    globalThis.localStorage = fakeStorage();
+  });
+
+  it("upgrades a v1 store without losing anything", () => {
+    // v1 kept one sudden-death record and no run log at all.
+    localStorage.setItem(
+      "chronology-store",
+      JSON.stringify({
+        v: 1,
+        daily: { "2026-01-01": { scores: [10, 10, 10, 10, 10], total: 50, playedAt: "x" } },
+        suddenBest: 9,
+        suddenGames: 4,
+        suddenTotalRounds: 20,
+      }),
+    );
+    const store = loadStore();
+    expect(store.v).toBe(3);
+    expect(store.daily["2026-01-01"].total).toBe(50);
+    expect(store.sudden["10"]).toEqual({ best: 9, games: 4, total: 20 });
+    expect(store.runs).toEqual([]);
+  });
+
+  it("round-trips guesses through storage", () => {
+    recordDaily("2026-08-30", {
+      scores: [90],
+      total: 90,
+      playedAt: "2026-08-30T09:00:00.000Z",
+      rounds: [{ y: 1066, e: "Battle of Hastings", g: 1070, s: 90 }],
+    });
+    expect(loadStore().daily["2026-08-30"].rounds).toEqual([
+      { y: 1066, e: "Battle of Hastings", g: 1070, s: 90 },
+    ]);
+  });
+
+  it("logs runs from both modes and caps the log", () => {
+    recordPack("rome", 300, [{ y: -44, e: "Ides of March", g: -50, s: 60 }]);
+    recordSuddenDeath(10, 7, "", [{ y: 1969, e: "Moon landing", g: 1970, s: 80 }]);
+    let store = loadStore();
+    expect(store.runs.map((r) => r.mode)).toEqual(["pack", "sudden"]);
+    expect(store.runs[1].survived).toBe(7);
+
+    for (let i = 0; i < MAX_RUN_LOG + 10; i++) recordPack("rome", i, []);
+    store = loadStore();
+    expect(store.runs).toHaveLength(MAX_RUN_LOG);
+    // the oldest are the ones shed, so the newest write survives
+    expect(store.runs[store.runs.length - 1].total).toBe(MAX_RUN_LOG + 9);
+  });
+
+  it("sheds history rather than losing the streak when storage is full", () => {
+    const store = loadStore();
+    store.daily["2026-08-30"] = { scores: [100], total: 100, playedAt: "t" };
+    for (let i = 0; i < 50; i++) {
+      store.runs.push({
+        at: `2026-08-30T00:00:${String(i).padStart(2, "0")}.000Z`,
+        mode: "pack",
+        theme: "rome",
+        total: i,
+        rounds: [{ y: 1, e: "x".repeat(200), g: 2, s: 3 }],
+      });
+    }
+    globalThis.localStorage = fakeStorage(2000); // too small for all that history
+    saveStore(store);
+
+    const reloaded = loadStore();
+    expect(reloaded.daily["2026-08-30"].total).toBe(100); // the part that matters kept
+    expect(reloaded.runs.length).toBeLessThan(50); // history shed to make room
   });
 });

@@ -97,10 +97,17 @@ export default function Faq({ onClose }: Props) {
           rather than luck.
         </p>
 
-        <h3>Your stats</h3>
+        <h3>Your stats and history</h3>
         <p>
-          Streaks, averages and best runs are saved on this device only (in local
-          storage). Nothing is sent anywhere.
+          Every round you finish is kept — what you guessed against what was true —
+          and you can read it back from <strong>See your history</strong> on the
+          front page. Dailies are kept for good; sudden-death runs and packs keep
+          the most recent few hundred.
+        </p>
+        <p>
+          All of it lives in this browser's local storage, on this device only.
+          Nothing is sent anywhere, which also means it does not follow you to
+          another browser or phone, and clearing site data erases it.
         </p>
 
         <h3>Where the events come from</h3>

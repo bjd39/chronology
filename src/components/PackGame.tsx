@@ -5,10 +5,12 @@ import { themeById, themePool } from "../game/themes";
 import { dailyScore, relativeError, DAILY_QUESTIONS, MAX_DAILY_SCORE } from "../game/scoring";
 import { formatYear, formatGap } from "../game/format";
 import { recordPack, loadStore, recordOf } from "../game/storage";
+import { toGuessRow } from "../game/history";
 import { packShareText } from "../game/share";
 import YearInput from "./YearInput";
 import ShareButton from "./ShareButton";
 import ScoreDots from "./ScoreDots";
+import Recap from "./Recap";
 
 interface Props {
   themeId: string;
@@ -51,7 +53,7 @@ export default function PackGame({ themeId, onExit, onStoreChange }: Props) {
   const next = () => {
     if (index + 1 >= DAILY_QUESTIONS) {
       const total = guesses.reduce((a, b) => a + b.score, 0);
-      recordPack(themeId, total);
+      recordPack(themeId, total, guesses.map(toGuessRow));
       onStoreChange();
       setPhase("finished");
     } else {
@@ -86,15 +88,7 @@ export default function PackGame({ themeId, onExit, onStoreChange }: Props) {
           <ScoreDots scores={scores} />
           {total >= record.best && total > 0 && <p className="record-badge">Best yet in this pack!</p>}
 
-          <ul className="recap">
-            {guesses.map((g, i) => (
-              <li key={i}>
-                <span className="recap-year">{formatYear(g.event.y)}</span>
-                <span className="recap-event">{g.event.e}</span>
-                <span className="recap-score">{g.score}</span>
-              </li>
-            ))}
-          </ul>
+          <Recap rounds={guesses.map(toGuessRow)} />
 
           <ShareButton text={packShareText(theme.label, theme.emoji, scores, total)} />
           <div className="btn-row">
