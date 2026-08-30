@@ -1,4 +1,10 @@
-import { DAILY_SPREAD, DEFAULT_SUDDEN_PCT, SUDDEN_LEVELS, REF_YEAR } from "../game/scoring";
+import {
+  DAILY_SPREAD,
+  DEFAULT_SUDDEN_PCT,
+  SUDDEN_LEVELS,
+  REF_YEAR,
+  GRACE_YEARS,
+} from "../game/scoring";
 import { THEMES } from "../game/themes";
 
 interface Props {
@@ -20,7 +26,7 @@ export default function Faq({ onClose }: Props) {
           to switch era — or just type a minus sign for BC.
         </p>
 
-        <h3>The two modes</h3>
+        <h3>The modes</h3>
         <p>
           <strong>Daily</strong> — five events, one from each era from antiquity to
           the modern day. Same five for everyone, every day. Score up to 100 per
@@ -48,12 +54,20 @@ export default function Faq({ onClose }: Props) {
           year. We measure your <strong>relative error</strong>:
         </p>
         <p className="formula">
-          error = |your&nbsp;guess − answer| ÷ (years&nbsp;ago)
+          error = |your&nbsp;guess − answer| ÷ (years&nbsp;ago + {GRACE_YEARS})
         </p>
         <p>
           So being 50 years off on a recent event is judged as harshly as being
           centuries off on an ancient one. Ancient history gives you room; modern
           history demands precision. (Years ago is measured from {REF_YEAR}.)
+        </p>
+        <p>
+          That <strong>+{GRACE_YEARS}</strong> is there because the pure version
+          breaks down at the recent end. Something from 2024 is only a couple of
+          years old, so being a single year out would be a 50% error — and nobody
+          can date last year's news to the year. Every event is judged as though it
+          were {GRACE_YEARS} years older than it is, which is nearly all of the
+          sum for something from the 2010s and almost none of it for 2500 BC.
         </p>
 
         <h3>The daily score</h3>

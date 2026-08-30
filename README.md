@@ -14,7 +14,14 @@ Guess the year historical events happened. Three modes:
 
 Scoring is framed as *how long ago* something happened, so a guess is judged by its
 **relative error** on that quantity — recent events demand precision, ancient ones
-give you room. The daily score is a logistic decay of that error. See the in-app FAQ.
+give you room. The daily score is a logistic decay of that error.
+
+Every event is judged as though it were `GRACE_YEARS` (25) older than it is. Pure
+relative error collapses at the recent end, where the denominator vanishes: a 2024
+event is two years old, so a single year out was a 50% error and scored 32. The
+grace is a quarter of the sum for something from the 2010s and half a percent of it
+for 2500 BC, so it rescues the modern end without loosening antiquity. See the
+in-app FAQ.
 
 ## Stack
 
@@ -128,9 +135,11 @@ game away, drops fragments the markup stripper mangled, and dedupes.
   in `scripts/rewrites.tsv`.
 - **Difficulty**, 1 (iconic) to 5 (specialist), on every surviving event. It is
   judged in *game* terms — against the relative-error scale, not raw years. The
-  survivable window at 10% is about 450 years for a 2500 BC event but about four
+  survivable window at 10% is about 450 years for a 2500 BC event but about six
   for a 1985 one, so an obscure Assyrian king is often easier to place than a famous
-  modern election.
+  modern election. (The grades were assigned before the grace horizon existed, when
+  the modern end was harsher still; they rank events correctly but read a little
+  pessimistic for anything after about 2000.)
 - **Theme packs**, from keyword lexicons in `curate.py`. Packs overlap: the fall of
   Constantinople belongs to Rome and to the Islamic world.
 

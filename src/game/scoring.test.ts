@@ -5,9 +5,12 @@ import {
   survives,
   toleranceYears,
   suddenLevel,
+  judgedAge,
+  yearsAgo,
   SUDDEN_LEVELS,
   DEFAULT_SUDDEN_PCT,
   DAILY_QUESTIONS,
+  GRACE_YEARS,
 } from "./scoring";
 import { EVENTS, dailyEvents, makeDeck, packEvents, difficultyCap } from "./events";
 import { THEMES, themePool, themeSize } from "./themes";
@@ -41,13 +44,24 @@ describe("dailyScore", () => {
 
 describe("survives (sudden death)", () => {
   it("survives at exactly the chosen tolerance", () => {
-    const answer = 1000; // 1026 years ago
-    const allowed = toleranceYears(answer, DEFAULT_SUDDEN_PCT); // ~102 years
+    const answer = 1000; // judged as 1051 years old -> ~105 years at 10%
+    const allowed = toleranceYears(answer, DEFAULT_SUDDEN_PCT);
     expect(survives(1000 - allowed, answer, DEFAULT_SUDDEN_PCT)).toBe(true);
   });
   it("dies when beyond the tolerance", () => {
-    const answer = 2000; // 26 years ago -> ~2.6 year window at 10%
+    const answer = 2000; // judged as 51 years old -> ~5 year window at 10%
     expect(survives(1990, answer, DEFAULT_SUDDEN_PCT)).toBe(false);
+  });
+  it("the window it reports is the window it marks against", () => {
+    // The reveal tells the player how many years of room they had; if that ever
+    // drifted from the rule actually applied, the game would be lying.
+    for (const answer of [-2500, -44, 476, 1066, 1500, 1800, 1900, 1969, 2005, 2024]) {
+      for (const level of SUDDEN_LEVELS) {
+        const allowed = toleranceYears(answer, level.pct);
+        expect(survives(answer + allowed, answer, level.pct)).toBe(true);
+        expect(survives(answer + allowed + 1, answer, level.pct)).toBe(false);
+      }
+    }
   });
   it("a wider tolerance forgives a guess a narrower one kills", () => {
     const answer = 1900;
@@ -63,6 +77,43 @@ describe("survives (sudden death)", () => {
     expect(pcts).toContain(DEFAULT_SUDDEN_PCT);
     expect(suddenLevel(DEFAULT_SUDDEN_PCT).pct).toBe(DEFAULT_SUDDEN_PCT);
     expect(suddenLevel(999).pct).toBe(DEFAULT_SUDDEN_PCT); // unknown falls back
+  });
+});
+
+describe("the grace horizon", () => {
+  it("judges every event as older than it is, by the grace", () => {
+    expect(judgedAge(2024)).toBe(yearsAgo(2024) + GRACE_YEARS);
+    expect(judgedAge(-2500)).toBe(yearsAgo(-2500) + GRACE_YEARS);
+  });
+  it("stops a one-year miss on a recent event being a disaster", () => {
+    // The complaint that prompted it: one year out on a 2024 event scored 32.
+    expect(dailyScore(2023, 2024)).toBeGreaterThan(85);
+    expect(dailyScore(2019, 2020)).toBeGreaterThan(85);
+    expect(dailyScore(2024, 2025)).toBeGreaterThan(85);
+  });
+  it("still punishes being a decade out on a recent event", () => {
+    expect(dailyScore(2014, 2024)).toBeLessThan(50);
+  });
+  it("barely touches the ancient end", () => {
+    // The grace is half a percent of a 4,500-year-old event's age, so antiquity
+    // must not have got measurably easier.
+    for (const [guess, answer] of [
+      [-2400, -2500],
+      [-400, -500],
+      [900, 1066],
+    ] as const) {
+      const before = Math.abs(guess - answer) / yearsAgo(answer);
+      const after = relativeError(guess, answer);
+      expect(before - after).toBeLessThan(0.02);
+    }
+  });
+  it("keeps recent events strictly harder than ancient ones", () => {
+    // The whole point of relative error: the grace must not invert the ordering.
+    const ages = [-2500, -44, 476, 1066, 1500, 1800, 1900, 1969, 2005, 2024];
+    const windows = ages.map((y) => toleranceYears(y, DEFAULT_SUDDEN_PCT));
+    for (let i = 1; i < windows.length; i++) {
+      expect(windows[i]).toBeLessThan(windows[i - 1]);
+    }
   });
 });
 

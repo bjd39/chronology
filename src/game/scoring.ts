@@ -6,6 +6,22 @@
 // Reference "present" year used for the how-long-ago calculation.
 export const REF_YEAR = 2026;
 
+/**
+ * Years added to every event's age before the relative error is taken.
+ *
+ * Pure relative error falls apart at the recent end, because the denominator
+ * vanishes: a 2024 event is only two years old, so being a single year out is a
+ * 50% error and used to score 32. Nobody can date last year's news to the year,
+ * and being one year out is a good guess whatever the era — so every event is
+ * judged as though it were this much older than it is.
+ *
+ * The grace is additive rather than a floor so there is one rule everywhere and
+ * no kink in the curve. It matters in inverse proportion to age: it is most of
+ * the denominator for something from the 2010s, a fifth of it for 1900, and
+ * half a percent of it for 2500 BC, which is left effectively untouched.
+ */
+export const GRACE_YEARS = 25;
+
 // Logistic spread for the daily score. Smaller = harsher. At this spread a guess
 // within ~15% of the true "how long ago" scores ~75, and within ~30% scores ~55.
 export const DAILY_SPREAD = 0.3;
@@ -44,10 +60,19 @@ export function yearsAgo(signedYear: number): number {
   return REF_YEAR - signedYear;
 }
 
+/**
+ * The age an event is actually judged against: how long ago it happened, plus
+ * the grace. Everything that divides by an event's age goes through here, so the
+ * window the player is told about and the window they are marked against cannot
+ * drift apart.
+ */
+export function judgedAge(answer: number): number {
+  return Math.max(yearsAgo(answer) + GRACE_YEARS, 1);
+}
+
 /** Relative error of a guess, measured on the "how long ago" scale. */
 export function relativeError(guess: number, answer: number): number {
-  const ago = Math.max(yearsAgo(answer), 1);
-  return Math.abs(guess - answer) / ago;
+  return Math.abs(guess - answer) / judgedAge(answer);
 }
 
 /**
@@ -68,5 +93,5 @@ export function survives(guess: number, answer: number, pct: number): boolean {
 
 /** The window of years that would survive at this tolerance — shown as a hint. */
 export function toleranceYears(answer: number, pct: number): number {
-  return Math.floor((Math.max(yearsAgo(answer), 1) * pct) / 100);
+  return Math.floor((judgedAge(answer) * pct) / 100);
 }

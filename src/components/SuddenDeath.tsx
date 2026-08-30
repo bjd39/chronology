@@ -90,8 +90,9 @@ export default function SuddenDeath({ onExit, onStoreChange }: Props) {
           <h3 className="setup-heading">How close do you have to be?</h3>
           <p className="setup-note">
             Miss by more than this share of the event's age and the run ends. Ten
-            percent of a 2,500-year-old event is 250 years; ten percent of a
-            1985 one is four.
+            percent of a 2,500-year-old event is 250 years; ten percent of a 1985
+            one is six. Recent events get a little grace so they are not simply a
+            demand for the exact year.
           </p>
           <div className="level-row">
             {SUDDEN_LEVELS.map((l) => (
