@@ -33,7 +33,9 @@ export default function SuddenDeath({ onExit, onStoreChange }: Props) {
   const [event, setEvent] = useState<GameEvent | null>(null);
   const [survived_, setSurvived] = useState(0);
   const [lastGuess, setLastGuess] = useState<number | null>(null);
-  const bestRef = useRef(0);
+  // The best at this margin *before* the current run, snapshotted when it starts,
+  // so finishing the run can tell whether it beat the old record.
+  const [previousBest, setPreviousBest] = useState(0);
 
   const level = suddenLevel(pct);
   const label = themeId ? themeLabel(themeId) : "";
@@ -41,7 +43,7 @@ export default function SuddenDeath({ onExit, onStoreChange }: Props) {
   const begin = (startPct: number, startTheme: string) => {
     const deck = makeDeck(randomSeed(), themePool(startTheme));
     deckRef.current = deck;
-    bestRef.current = recordOf(loadStore().sudden, String(startPct)).best;
+    setPreviousBest(recordOf(loadStore().sudden, String(startPct)).best);
     setPct(startPct);
     setThemeId(startTheme);
     rememberSuddenPct(startPct);
@@ -150,7 +152,7 @@ export default function SuddenDeath({ onExit, onStoreChange }: Props) {
 
   // --- Run over ---
   if (phase === "dead") {
-    const isRecord = survived_ > 0 && survived_ >= bestRef.current;
+    const isRecord = survived_ > 0 && survived_ >= previousBest;
     return (
       <div className="screen">
         <div className="result-card">
