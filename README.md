@@ -142,6 +142,12 @@ game away, drops fragments the markup stripper mangled, and dedupes.
   pessimistic for anything after about 2000.)
 - **Theme packs**, from keyword lexicons in `curate.py`. Packs overlap: the fall of
   Constantinople belongs to Rome and to the Islamic world.
+- **Hand-picked packs**, in `scripts/packs.tsv`, unioned with whatever the lexicons
+  found. Some packs are about an idea rather than a vocabulary and no keyword list
+  can express them: "Explaining the World" — the history of learning how to find
+  things out, in the sense of Weinberg's *To Explain the World* — needs Ptolemy the
+  astronomer but not Ptolemy the general, and wants neither every university ever
+  founded nor every space probe ever launched. So it is chosen one event at a time.
 
 The corpus averages 3.6 out of 5, so uniform sampling makes almost every question a
 hard one. The daily, the packs and sudden death all stratify on difficulty instead —
@@ -154,5 +160,13 @@ python3 scripts/scrape.py raw.json          # ~150 Wikipedia requests
 python3 scripts/curate.py raw.json src/data/events.json
 ```
 
-`curate.py` reports anything in the fresh scrape that is not in `curation.tsv`;
-those events are skipped until they are reviewed.
+Run it on the curated file itself and it re-tags in place instead, which is how a
+new hand-picked pack is applied without a fresh scrape:
+
+```bash
+python3 scripts/curate.py src/data/events.json src/data/events.json
+```
+
+Watch the counts it prints. `curate.py` reports anything in a fresh scrape that is
+not in `curation.tsv` (those events are skipped until reviewed) and anything in
+`packs.tsv` that no longer matches a kept event.

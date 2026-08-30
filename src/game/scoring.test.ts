@@ -201,6 +201,27 @@ describe("themes", () => {
       for (const e of themePool(theme.id)) expect(e.t).toContain(theme.id);
     }
   });
+  it("every pack can fill each rung of the difficulty ladder", () => {
+    // packEvents widens a rung it cannot fill, which silently flattens the
+    // easy-to-hard curve. Every pack should be able to serve the real thing.
+    for (const theme of THEMES) {
+      const difficulties = new Set(themePool(theme.id).map((e) => e.d));
+      for (const rung of [[1, 2], [2, 3], [3], [3, 4], [4, 5]]) {
+        expect(rung.some((d) => difficulties.has(d))).toBe(true);
+      }
+    }
+  });
+  it("the hand-picked pack spans the whole arc it is about", () => {
+    // "Explaining the World" is chosen by hand in scripts/packs.tsv rather than
+    // by keyword; it is meant to run from antiquity to the present, so a rescrape
+    // quietly dropping its ancient half should fail here rather than in play.
+    const years = themePool("explaining").map((e) => e.y);
+    expect(years.length).toBeGreaterThanOrEqual(50);
+    expect(Math.min(...years)).toBeLessThan(-400);
+    expect(Math.max(...years)).toBeGreaterThan(1900);
+    expect(years.filter((y) => y < 1000).length).toBeGreaterThanOrEqual(10);
+    expect(years.filter((y) => y >= 1000 && y < 1800).length).toBeGreaterThanOrEqual(10);
+  });
 });
 
 describe("sudden-death deck", () => {

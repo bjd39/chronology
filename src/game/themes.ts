@@ -2,9 +2,10 @@ import type { GameEvent } from "../types";
 import { EVENTS } from "./events";
 
 /**
- * A themed pack is a slice of the corpus. Membership is decided offline by the
- * keyword lexicons in scripts/curate.py and baked into each event's `t` array —
- * keep the ids here in step with that file.
+ * A themed pack is a slice of the corpus. Membership is decided offline and baked
+ * into each event's `t` array: most packs come from the keyword lexicons in
+ * scripts/curate.py, and packs whose subject is an idea rather than a vocabulary
+ * are hand-picked in scripts/packs.tsv. Keep the ids here in step with both.
  *
  * Packs overlap on purpose: the fall of Constantinople belongs to Rome and to
  * the Islamic world, and it would be a worse question in only one of them.
@@ -30,6 +31,12 @@ export const THEMES: Theme[] = [
   { id: "coldwar", label: "The Cold War", emoji: "☢️", blurb: "Iron curtain, proxy wars and the thaw." },
   { id: "exploration", label: "Exploration & Empire", emoji: "🧭", blurb: "Voyages, colonies and the poles." },
   { id: "science", label: "Science & Space", emoji: "🔭", blurb: "Discoveries, inventions and spaceflight." },
+  {
+    id: "explaining",
+    label: "Explaining the World",
+    emoji: "⚗️",
+    blurb: "Learning how to find things out — reckoning time, then measuring it.",
+  },
   { id: "arts", label: "Art & Culture", emoji: "🎭", blurb: "Paintings, operas, novels and films." },
   { id: "disasters", label: "Disasters", emoji: "🌋", blurb: "Earthquakes, plagues, eruptions and wrecks." },
 ];

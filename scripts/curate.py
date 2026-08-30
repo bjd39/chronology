@@ -11,6 +11,8 @@ Three inputs, in increasing order of hand-work:
                         with a difficulty of 1 (iconic) to 5 (specialist).
   scripts/rewrites.tsv  replacement text for the handful of events the scraper
                         mangled but that are worth keeping.
+  scripts/packs.tsv     hand-picked pack membership, for packs no keyword lexicon
+                        can express.
   THEMES (below)        keyword lexicons, applied automatically.
 
 Difficulty is judged in *game* terms — against the relative-error scale the game
@@ -28,6 +30,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # Each event is tagged with every theme whose pattern it matches, so packs
 # overlap (the fall of Constantinople is both Rome and the Islamic world).
 # Keep these in sync with THEMES in src/game/themes.ts.
+#
+# Not every pack is here: one whose subject is an idea rather than a vocabulary
+# is hand-picked in scripts/packs.tsv instead, and unioned with whatever these
+# lexicons find. src/game/themes.ts is the full list of packs.
 
 THEMES = {
     "rome": r"\bRom(e|an|ans)\b|\bCaesar|Augustus|Octavian|Mark Antony|Carthag|Punic\b"
@@ -157,26 +163,63 @@ def load_tsv(name):
     return rows
 
 
+def load_packs():
+    """Hand-picked membership: "<year>|<slug>" -> [theme id, ...].
+
+    Keyed on the FINAL event text, unlike curation.tsv and rewrites.tsv, because
+    this is applied after those two have already rewritten and tidied it.
+    """
+    packs = collections.defaultdict(list)
+    with open(os.path.join(HERE, "packs.tsv")) as f:
+        for line in f:
+            line = line.rstrip("\n")
+            if not line or line.startswith("#"):
+                continue
+            theme, key = line.split("\t", 1)
+            packs[key].append(theme)
+    return packs
+
+
 def main():
     src = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "..", "src", "data", "events.json")
     dst = sys.argv[2] if len(sys.argv) > 2 else src
 
     raw = json.load(open(src))
-    verdicts = load_tsv("curation.tsv")  # "<year>|<slug>" -> verdict
-    rewrites = load_tsv("rewrites.tsv")
+    hand_picked = load_packs()
+
+    def tag(text, year):
+        """Lexicon themes, unioned with any hand-picked pack membership."""
+        themes = themes_for(text, year)
+        for theme in hand_picked.get(f"{year}|{slug(text)}", []):
+            if theme not in themes:
+                themes.append(theme)
+        return themes
+
+    # Running this on its own output is a normal thing to want — it is how a new
+    # hand-picked pack gets applied without a fresh scrape. Detect that case and
+    # only recompute the themes: the verdicts and rewrites are already baked into
+    # the text, and re-applying them to it would silently drop every event whose
+    # wording curation changed.
+    already_curated = bool(raw) and "d" in raw[0]
 
     out, dropped, unreviewed = [], 0, []
-    for e in raw:
-        key = f"{e['y']}|{slug(e['e'])}"
-        verdict = verdicts.get(key)
-        if verdict is None:
-            unreviewed.append(key)
-            continue
-        if verdict == "x":
-            dropped += 1
-            continue
-        text = tidy(rewrites.get(key, e["e"]))
-        out.append({"y": e["y"], "e": text, "d": int(verdict), "t": themes_for(text, e["y"])})
+    if already_curated:
+        for e in raw:
+            out.append({"y": e["y"], "e": e["e"], "d": e["d"], "t": tag(e["e"], e["y"])})
+    else:
+        verdicts = load_tsv("curation.tsv")  # "<year>|<slug>" -> verdict
+        rewrites = load_tsv("rewrites.tsv")
+        for e in raw:
+            key = f"{e['y']}|{slug(e['e'])}"
+            verdict = verdicts.get(key)
+            if verdict is None:
+                unreviewed.append(key)
+                continue
+            if verdict == "x":
+                dropped += 1
+                continue
+            text = tidy(rewrites.get(key, e["e"]))
+            out.append({"y": e["y"], "e": text, "d": int(verdict), "t": tag(text, e["y"])})
 
     out.sort(key=lambda x: (x["y"], x["e"]))
     with open(dst, "w") as f:
@@ -185,13 +228,19 @@ def main():
         f.write("\n]\n")
 
     hist = collections.Counter(e["d"] for e in out)
-    packs = collections.Counter(t for e in out for t in e["t"])
-    print(f"kept {len(out)}, dropped {dropped}, unreviewed {len(unreviewed)}", file=sys.stderr)
+    sizes = collections.Counter(t for e in out for t in e["t"])
+    mode = "retagged" if already_curated else "curated"
+    print(f"{mode} {len(out)}, dropped {dropped}, unreviewed {len(unreviewed)}", file=sys.stderr)
     print("difficulty " + " ".join(f"{d}:{hist[d]}" for d in range(1, 6)), file=sys.stderr)
-    print("packs " + " ".join(f"{k}:{v}" for k, v in packs.most_common()), file=sys.stderr)
+    print("packs " + " ".join(f"{k}:{v}" for k, v in sizes.most_common()), file=sys.stderr)
     if unreviewed:
         print(f"WARNING: {len(unreviewed)} events are not in curation.tsv and were skipped; "
               f"first: {unreviewed[0]}", file=sys.stderr)
+    placed = {f"{e['y']}|{slug(e['e'])}" for e in out}
+    stale = sorted(k for k in hand_picked if k not in placed)
+    if stale:
+        print(f"WARNING: {len(stale)} packs.tsv entries matched no kept event "
+              f"(dropped or reworded since they were picked); first: {stale[0]}", file=sys.stderr)
 
 
 if __name__ == "__main__":
