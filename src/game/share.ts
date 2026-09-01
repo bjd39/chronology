@@ -4,11 +4,13 @@ import { MAX_DAILY_SCORE } from "./scoring";
 import type { Theme } from "./themes";
 
 /**
- * Query parameter carrying a themed pack, so a shared pack result opens that
- * pack rather than the front page. Written by packShareText and read back by
- * packFromUrl — they are here together so they cannot drift apart.
+ * Query parameters carrying a themed pack and the seed that dealt it, so a shared
+ * pack result opens that pack on the very same five events. Written by
+ * packShareText and read back by packFromUrl — they are here together so they
+ * cannot drift apart.
  */
 export const PACK_PARAM = "pack";
+export const SEED_PARAM = "seed";
 
 // The live URL, derived from wherever the app is actually served.
 function gameUrl(): string {
@@ -29,10 +31,13 @@ export function scoreSquare(score: number): string {
   return "⬛";
 }
 
+/** Total, the row of squares, then the individual scores. */
+function scoreboard(scores: number[], total: number, max: number): string {
+  return [`${total}/${max}`, scores.map(scoreSquare).join(""), scores.join(" / ")].join("\n");
+}
+
 export function dailyShareText(dateKey: string, scores: number[], total: number): string {
-  const squares = scores.map(scoreSquare).join("");
-  const perRound = scores.join(" / ");
-  return `Chronology ${dateKey}\n${total}/${scores.length * 100}\n${squares}\n${perRound}\n${gameUrl()}`;
+  return `Chronology ${dateKey}\n${scoreboard(scores, total, scores.length * 100)}\n${gameUrl()}`;
 }
 
 /**
@@ -53,23 +58,49 @@ export function suddenDeathShareText(rounds: number, pct: number, themeLabel?: s
   );
 }
 
-export function packShareText(theme: Theme, scores: number[], total: number): string {
-  const squares = scores.map(scoreSquare).join("");
-  const url = `${gameUrl()}?${PACK_PARAM}=${encodeURIComponent(theme.id)}`;
-  return `Chronology ${theme.emoji} ${theme.label}\n${total}/${MAX_DAILY_SCORE}\n${squares}\n${url}`;
+/**
+ * Packs are replayable, so unlike the daily there is no shared puzzle of the day —
+ * the seed that dealt these five is what makes the result comparable. It travels
+ * in base 36 to keep the link short enough to read in a chat message.
+ */
+export function packShareText(
+  theme: Theme,
+  scores: number[],
+  total: number,
+  seed: number,
+): string {
+  const params = new URLSearchParams({
+    [PACK_PARAM]: theme.id,
+    [SEED_PARAM]: (seed >>> 0).toString(36),
+  });
+  const url = `${gameUrl()}?${params}`;
+  return `Chronology ${theme.emoji} ${theme.label}\n${scoreboard(scores, total, MAX_DAILY_SCORE)}\n${url}`;
+}
+
+export interface PackLink {
+  pack: string;
+  /** null when the link named a pack but no usable seed: deal a fresh five. */
+  seed: number | null;
 }
 
 /**
- * The pack id a link is asking for, if any. Takes the URL as an argument rather
+ * What a link is asking for, if anything. Takes the URL as an argument rather
  * than reading location itself, so the round trip out through packShareText and
  * back in again can be tested.
  */
-export function packFromUrl(url: string): string | null {
+export function packFromUrl(url: string): PackLink | null {
+  let params: URLSearchParams;
   try {
-    return new URL(url, "https://chronology.invalid/").searchParams.get(PACK_PARAM) || null;
+    params = new URL(url, "https://chronology.invalid/").searchParams;
   } catch {
     return null;
   }
+  const pack = params.get(PACK_PARAM);
+  if (!pack) return null;
+  const raw = params.get(SEED_PARAM);
+  const seed = raw ? parseInt(raw, 36) : NaN;
+  const usable = Number.isSafeInteger(seed) && seed >= 0 && seed <= 0xffffffff;
+  return { pack, seed: usable ? seed : null };
 }
 
 /** Copy to clipboard, falling back to the Web Share sheet on mobile. */

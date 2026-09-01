@@ -11,8 +11,11 @@ Guess the year historical events happened. Three modes:
   pointed at a single themed pack.
 - **Themed packs** — five events from one corner of history (Rome, the World Wars,
   China & East Asia, …). Replayable, scored like the daily. Sharing a pack result
-  links back to that pack (`?pack=<id>`), so the invitation lands where the boast
-  was made rather than on the front page.
+  links back to that pack *on the same five events*
+  (`?pack=<id>&seed=<base36>`), so the person you send it to plays what you played
+  and the scores are comparable. The seed only reproduces a round while that pack's
+  membership is unchanged: edit the pack and older links deal a different five,
+  quietly rather than breaking. See `packEvents` in `src/game/events.ts`.
 
 Scoring is framed as *how long ago* something happened, so a guess is judged by its
 **relative error** on that quantity — recent events demand precision, ancient ones

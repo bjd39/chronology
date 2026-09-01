@@ -12,7 +12,7 @@ import {
   DAILY_QUESTIONS,
   GRACE_YEARS,
 } from "./scoring";
-import { EVENTS, dailyEvents, makeDeck, packEvents, difficultyCap } from "./events";
+import { EVENTS, dailyEvents, makeDeck, packEvents, difficultyCap, randomSeed } from "./events";
 import { THEMES, themePool, themeSize, themeById } from "./themes";
 import {
   suddenDeathShareText,
@@ -142,7 +142,7 @@ describe("score squares", () => {
   });
   it("reaches the share text of both scored modes", () => {
     expect(dailyShareText("2026-08-30", [100, 96, 76, 88, 83], 443)).toContain("🎉🟩🟨🟨🟨");
-    expect(packShareText(THEMES[0], [100, 40, 40, 40, 40], 260)).toContain("🎉");
+    expect(packShareText(THEMES[0], [100, 40, 40, 40, 40], 260, 1)).toContain("🎉");
   });
 });
 
@@ -156,14 +156,42 @@ describe("share text", () => {
 });
 
 describe("pack deep links", () => {
-  it("a shared pack result links back to that pack", () => {
+  it("a shared pack result links back to that pack, on the same five", () => {
     for (const theme of THEMES) {
-      const text = packShareText(theme, [50, 50, 50, 50, 50], 250);
+      const seed = 123456;
+      const text = packShareText(theme, [50, 50, 50, 50, 50], 250, seed);
       const url = text.trim().split("\n").pop() as string;
-      // the whole point: the link the reader taps reopens the pack that was played
-      expect(packFromUrl(url)).toBe(theme.id);
-      expect(themeById(packFromUrl(url) as string)?.label).toBe(theme.label);
+      const link = packFromUrl(url);
+      expect(link?.pack).toBe(theme.id);
+      expect(link?.seed).toBe(seed);
+      expect(themeById(link!.pack)?.label).toBe(theme.label);
+      // the actual promise: the recipient is dealt exactly what the sharer played
+      expect(packEvents(themePool(link!.pack), link!.seed as number)).toEqual(
+        packEvents(themePool(theme.id), seed),
+      );
     }
+  });
+  it("carries any seed the dealer can produce, there and back", () => {
+    const theme = THEMES[0];
+    for (const seed of [0, 1, 42, 2 ** 31 - 1, 0xffffffff]) {
+      const url = packShareText(theme, [0], 0, seed).trim().split("\n").pop() as string;
+      expect(packFromUrl(url)?.seed).toBe(seed);
+    }
+    // and the dealer only ever produces seeds inside that range
+    for (let i = 0; i < 200; i++) {
+      const seed = randomSeed();
+      expect(seed).toBeGreaterThanOrEqual(0);
+      expect(seed).toBeLessThanOrEqual(0xffffffff);
+      expect(Number.isSafeInteger(seed)).toBe(true);
+    }
+  });
+  it("deals a fresh five when the seed is missing or unusable", () => {
+    expect(packFromUrl("?pack=rome")).toEqual({ pack: "rome", seed: null });
+    expect(packFromUrl("?pack=rome&seed=")).toEqual({ pack: "rome", seed: null });
+    expect(packFromUrl("?pack=rome&seed=!!!")).toEqual({ pack: "rome", seed: null });
+    expect(packFromUrl("?pack=rome&seed=-5")).toEqual({ pack: "rome", seed: null });
+    // beyond a uint32 it would not survive the PRNG's own truncation, so refuse it
+    expect(packFromUrl("?pack=rome&seed=zzzzzzzzzzzz")).toEqual({ pack: "rome", seed: null });
   });
   it("finds nothing in a plain link, and survives a malformed one", () => {
     expect(packFromUrl("https://bjd39.github.io/chronology/")).toBeNull();
@@ -172,7 +200,22 @@ describe("pack deep links", () => {
     expect(packFromUrl("?pack=")).toBeNull();
   });
   it("does not resolve a pack id that no longer exists", () => {
-    expect(themeById(packFromUrl("?pack=phlogiston") as string)).toBeNull();
+    expect(themeById(packFromUrl("?pack=phlogiston")!.pack)).toBeNull();
+  });
+});
+
+describe("pack share text", () => {
+  it("shows the per-round scores, not just the total", () => {
+    const text = packShareText(THEMES[0], [100, 96, 76, 88, 47], 407, 7);
+    expect(text).toContain("407/500");
+    expect(text).toContain("🎉🟩🟨🟨🟧");
+    expect(text).toContain("100 / 96 / 76 / 88 / 47");
+  });
+  it("is laid out like the daily, so the two read the same in a chat", () => {
+    const daily = dailyShareText("2026-09-01", [100, 96, 76, 88, 47], 407).split("\n");
+    const pack = packShareText(THEMES[0], [100, 96, 76, 88, 47], 407, 7).split("\n");
+    expect(pack).toHaveLength(daily.length);
+    expect(pack.slice(1, 4)).toEqual(daily.slice(1, 4));
   });
 });
 

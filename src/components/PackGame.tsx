@@ -14,6 +14,8 @@ import Recap from "./Recap";
 
 interface Props {
   themeId: string;
+  /** From a shared link: replay that exact five rather than dealing new ones. */
+  initialSeed?: number | null;
   onExit: () => void;
   onStoreChange: () => void;
 }
@@ -24,10 +26,11 @@ type Phase = "guessing" | "revealed" | "finished";
  * A themed pack: five events from one slice of history, scored like the daily
  * but replayable — there is no "the" Roman puzzle, just another five.
  */
-export default function PackGame({ themeId, onExit, onStoreChange }: Props) {
+export default function PackGame({ themeId, initialSeed, onExit, onStoreChange }: Props) {
   const theme = themeById(themeId);
-  // A fresh seed is a fresh set of five; "Five more" just draws a new one.
-  const [seed, setSeed] = useState(randomSeed);
+  // A fresh seed is a fresh set of five; "Five more" just draws a new one. A seed
+  // off a shared link deals the same five the sharer played.
+  const [seed, setSeed] = useState(() => initialSeed ?? randomSeed());
   const events = useMemo<GameEvent[]>(
     () => packEvents(themePool(themeId), seed),
     [themeId, seed],
@@ -90,7 +93,7 @@ export default function PackGame({ themeId, onExit, onStoreChange }: Props) {
 
           <Recap rounds={guesses.map(toGuessRow)} />
 
-          <ShareButton text={packShareText(theme, scores, total)} />
+          <ShareButton text={packShareText(theme, scores, total, seed)} />
           <div className="btn-row">
             <button className="btn-primary" onClick={again}>
               Five more

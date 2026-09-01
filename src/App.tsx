@@ -12,25 +12,26 @@ import { themeById } from "./game/themes";
 type Screen = "home" | "daily" | "sudden" | "pack" | "history";
 
 /**
- * A shared pack result links to ?pack=<id>, so following one opens that pack
- * instead of the front page. The parameter is consumed once and wiped from the
- * address bar: without that, going home and refreshing would throw you back into
- * the pack you had just left.
+ * A shared pack result links to ?pack=<id>&seed=<base36>, so following one opens
+ * that pack on the same five events. The parameters are consumed once and wiped
+ * from the address bar: without that, going home and refreshing would throw you
+ * back into the pack you had just left.
  */
-function packFromLink(): string {
-  if (typeof location === "undefined") return "";
+function packFromLink(): { pack: string; seed: number | null } {
+  const none = { pack: "", seed: null };
+  if (typeof location === "undefined") return none;
   const asked = packFromUrl(location.href);
-  if (asked === null) return "";
+  if (asked === null) return none;
   if (typeof history !== "undefined" && history.replaceState) {
     history.replaceState(null, "", location.origin + location.pathname);
   }
-  return themeById(asked) ? asked : "";
+  return themeById(asked.pack) ? asked : none;
 }
 
 export default function App() {
-  const [linkedPack] = useState(packFromLink);
-  const [screen, setScreen] = useState<Screen>(linkedPack ? "pack" : "home");
-  const [packTheme, setPackTheme] = useState(linkedPack);
+  const [linked] = useState(packFromLink);
+  const [screen, setScreen] = useState<Screen>(linked.pack ? "pack" : "home");
+  const [packTheme, setPackTheme] = useState(linked.pack);
   const [store, setStore] = useState(loadStore);
   const [showFaq, setShowFaq] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">(() => {
@@ -92,6 +93,7 @@ export default function App() {
         {screen === "pack" && (
           <PackGame
             themeId={packTheme}
+            initialSeed={packTheme === linked.pack ? linked.seed : null}
             onExit={() => setScreen("home")}
             onStoreChange={refreshStore}
           />

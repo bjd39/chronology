@@ -130,7 +130,16 @@ export function makeDeck(seed: number, pool: GameEvent[]): Deck {
 
 /**
  * A one-off round of DAILY_QUESTIONS events from a themed pack, on the same
- * difficulty ladder as the daily. Not deterministic — packs are replayable.
+ * difficulty ladder as the daily. Packs are replayable, so the seed is normally
+ * random — but it is also what a shared link carries, so the same seed and the
+ * same pool always deal the same five.
+ *
+ * "The same pool" is the caveat: picks are indices into the pack's members, so
+ * adding, dropping or retagging events in a pack changes what an older link
+ * deals. It degrades quietly rather than breaking — the recipient still gets a
+ * proper round of the right pack — and links are played within hours of being
+ * sent, so this is accepted rather than solved. Making it survive corpus edits
+ * would mean choosing by a hash of (seed, event) instead of by index.
  */
 export function packEvents(pool: GameEvent[], seed: number): GameEvent[] {
   const rand = mulberry32(seed);
