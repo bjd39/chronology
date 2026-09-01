@@ -10,7 +10,9 @@ Guess the year historical events happened. Three modes:
   result — *"12 rounds at 5%"* — and bests are tracked per margin. Runs can be
   pointed at a single themed pack.
 - **Themed packs** — five events from one corner of history (Rome, the World Wars,
-  China & East Asia, …). Replayable, scored like the daily.
+  China & East Asia, …). Replayable, scored like the daily. Sharing a pack result
+  links back to that pack (`?pack=<id>`), so the invitation lands where the boast
+  was made rather than on the front page.
 
 Scoring is framed as *how long ago* something happened, so a guess is judged by its
 **relative error** on that quantity — recent events demand precision, ancient ones

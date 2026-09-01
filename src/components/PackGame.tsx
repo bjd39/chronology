@@ -90,7 +90,7 @@ export default function PackGame({ themeId, onExit, onStoreChange }: Props) {
 
           <Recap rounds={guesses.map(toGuessRow)} />
 
-          <ShareButton text={packShareText(theme.label, theme.emoji, scores, total)} />
+          <ShareButton text={packShareText(theme, scores, total)} />
           <div className="btn-row">
             <button className="btn-primary" onClick={again}>
               Five more

@@ -6,12 +6,31 @@ import SuddenDeath from "./components/SuddenDeath";
 import PackGame from "./components/PackGame";
 import History from "./components/History";
 import Faq from "./components/Faq";
+import { packFromUrl } from "./game/share";
+import { themeById } from "./game/themes";
 
 type Screen = "home" | "daily" | "sudden" | "pack" | "history";
 
+/**
+ * A shared pack result links to ?pack=<id>, so following one opens that pack
+ * instead of the front page. The parameter is consumed once and wiped from the
+ * address bar: without that, going home and refreshing would throw you back into
+ * the pack you had just left.
+ */
+function packFromLink(): string {
+  if (typeof location === "undefined") return "";
+  const asked = packFromUrl(location.href);
+  if (asked === null) return "";
+  if (typeof history !== "undefined" && history.replaceState) {
+    history.replaceState(null, "", location.origin + location.pathname);
+  }
+  return themeById(asked) ? asked : "";
+}
+
 export default function App() {
-  const [screen, setScreen] = useState<Screen>("home");
-  const [packTheme, setPackTheme] = useState("");
+  const [linkedPack] = useState(packFromLink);
+  const [screen, setScreen] = useState<Screen>(linkedPack ? "pack" : "home");
+  const [packTheme, setPackTheme] = useState(linkedPack);
   const [store, setStore] = useState(loadStore);
   const [showFaq, setShowFaq] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">(() => {

@@ -13,8 +13,14 @@ import {
   GRACE_YEARS,
 } from "./scoring";
 import { EVENTS, dailyEvents, makeDeck, packEvents, difficultyCap } from "./events";
-import { THEMES, themePool, themeSize } from "./themes";
-import { suddenDeathShareText, dailyShareText, packShareText, scoreSquare } from "./share";
+import { THEMES, themePool, themeSize, themeById } from "./themes";
+import {
+  suddenDeathShareText,
+  dailyShareText,
+  packShareText,
+  packFromUrl,
+  scoreSquare,
+} from "./share";
 import { historyEntries, toGuessRow } from "./history";
 import { loadStore, saveStore, recordDaily, recordSuddenDeath, recordPack, MAX_RUN_LOG } from "./storage";
 import type { Store, GuessRow } from "../types";
@@ -136,7 +142,7 @@ describe("score squares", () => {
   });
   it("reaches the share text of both scored modes", () => {
     expect(dailyShareText("2026-08-30", [100, 96, 76, 88, 83], 443)).toContain("🎉🟩🟨🟨🟨");
-    expect(packShareText("Rome & Byzantium", "🏛️", [100, 40, 40, 40, 40], 260)).toContain("🎉");
+    expect(packShareText(THEMES[0], [100, 40, 40, 40, 40], 260)).toContain("🎉");
   });
 });
 
@@ -146,6 +152,27 @@ describe("share text", () => {
   });
   it("names the pack when the run was themed", () => {
     expect(suddenDeathShareText(3, 10, "Rome & Byzantium")).toContain("Rome & Byzantium");
+  });
+});
+
+describe("pack deep links", () => {
+  it("a shared pack result links back to that pack", () => {
+    for (const theme of THEMES) {
+      const text = packShareText(theme, [50, 50, 50, 50, 50], 250);
+      const url = text.trim().split("\n").pop() as string;
+      // the whole point: the link the reader taps reopens the pack that was played
+      expect(packFromUrl(url)).toBe(theme.id);
+      expect(themeById(packFromUrl(url) as string)?.label).toBe(theme.label);
+    }
+  });
+  it("finds nothing in a plain link, and survives a malformed one", () => {
+    expect(packFromUrl("https://bjd39.github.io/chronology/")).toBeNull();
+    expect(packFromUrl("https://bjd39.github.io/chronology/?other=1")).toBeNull();
+    expect(packFromUrl("not a url at all")).toBeNull();
+    expect(packFromUrl("?pack=")).toBeNull();
+  });
+  it("does not resolve a pack id that no longer exists", () => {
+    expect(themeById(packFromUrl("?pack=phlogiston") as string)).toBeNull();
   });
 });
 
