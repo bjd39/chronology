@@ -338,6 +338,11 @@ main { flex: 1; }
   color: var(--accent);
   margin-top: 0.5rem;
 }
+.score-note {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-top: 0.3rem;
+}
 
 .score-dots { display: flex; gap: 0.4rem; justify-content: center; margin: 1.25rem 0; }
 .dot { width: 1.4rem; height: 1.4rem; border-radius: 4px; display: inline-block; }

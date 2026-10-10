@@ -21,12 +21,13 @@ Scoring is framed as *how long ago* something happened, so a guess is judged by 
 **relative error** on that quantity — recent events demand precision, ancient ones
 give you room. The daily score is a logistic decay of that error.
 
-A finished five earns a title, a pun on the number scored — Centurion at 100,
-Spartan at 300, Quattrocento at 400, then a clock face counting down the last fifty
-(Half Past Four, Quarter to Five, Ten to Five) to Bang on Time for a perfect 500.
-The ladder lives in `src/game/titles.ts`; the app, the history screen and the share
-text all read it from there, so adding or renaming a band changes every one of them
-at once. Sudden death has no title: it is measured in rounds survived, not points.
+A finished five earns a rank, climbing from Footnote through Centurion (100),
+Spartan (300) and Conqueror (400) to Immortal for a perfect 500. The numbers show
+through where they can, but the rank reads as an achievement first and a pun
+second. The ladder lives in `src/game/titles.ts`; the app, the history screen and
+the share text all read it from there, so adding or renaming a band changes every
+one of them at once. Sudden death has no rank: it is measured in rounds survived,
+not points.
 
 Every event is judged as though it were `GRACE_YEARS` (25) older than it is. Pure
 relative error collapses at the recent end, where the denominator vanishes: a 2024

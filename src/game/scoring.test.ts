@@ -13,7 +13,7 @@ import {
   GRACE_YEARS,
   MAX_DAILY_SCORE,
 } from "./scoring";
-import { scoreTitle, SCORE_BANDS } from "./titles";
+import { scoreTitle, scoreNote, SCORE_BANDS } from "./titles";
 import { EVENTS, dailyEvents, makeDeck, packEvents, difficultyCap, randomSeed } from "./events";
 import { THEMES, themePool, themeSize, themeById } from "./themes";
 import {
@@ -224,23 +224,23 @@ describe("pack share text", () => {
 describe("score titles", () => {
   it("hands out a rank at each band, and not before", () => {
     const expected: [number, string][] = [
-      [0, "Decimated"],
-      [99, "Decimated"],
+      [0, "Footnote"],
+      [99, "Footnote"],
       [100, "Centurion"],
       [199, "Centurion"],
-      [200, "Bicenturion"],
-      [299, "Bicenturion"],
+      [200, "Praetorian"],
+      [299, "Praetorian"],
       [300, "Spartan"],
       [399, "Spartan"],
-      [400, "Quattrocento"],
-      [449, "Quattrocento"],
-      [450, "Half Past Four"],
-      [474, "Half Past Four"],
-      [475, "Quarter to Five"],
-      [489, "Quarter to Five"],
-      [490, "Ten to Five"],
-      [499, "Ten to Five"],
-      [500, "Bang on Time"],
+      [400, "Conqueror"],
+      [449, "Conqueror"],
+      [450, "Emperor"],
+      [474, "Emperor"],
+      [475, "Oracle"],
+      [489, "Oracle"],
+      [490, "Colossus"],
+      [499, "Colossus"],
+      [500, "Immortal"],
     ];
     for (const [total, title] of expected) expect(scoreTitle(total)).toBe(title);
   });
@@ -255,17 +255,22 @@ describe("score titles", () => {
     expect(new Set(SCORE_BANDS.map((b) => b.title)).size).toBe(SCORE_BANDS.length);
     expect(mins[mins.length - 1]).toBe(0);
   });
-  it("never leaves a score unranked", () => {
+  it("never leaves a score unranked, or unpraised", () => {
     for (let total = 0; total <= MAX_DAILY_SCORE; total++) {
       expect(scoreTitle(total)).not.toBe("");
+      expect(scoreNote(total)).not.toBe("");
     }
+  });
+  it("gives every rank its own line of praise", () => {
+    expect(new Set(SCORE_BANDS.map((b) => b.note)).size).toBe(SCORE_BANDS.length);
+    for (const b of SCORE_BANDS) expect(scoreNote(b.min)).toBe(b.note);
   });
   it("rides along with the score in both share texts", () => {
     expect(dailyShareText("2026-09-01", [100, 96, 76, 88, 47], 407)).toContain(
-      "407/500 · Quattrocento",
+      "407/500 · Conqueror",
     );
     expect(packShareText(THEMES[0], [100, 100, 100, 100, 100], 500, 7)).toContain(
-      "500/500 · Bang on Time",
+      "500/500 · Immortal",
     );
   });
 });

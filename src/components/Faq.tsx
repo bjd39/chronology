@@ -86,10 +86,9 @@ export default function Faq({ onClose }: Props) {
 
         <h3>Titles</h3>
         <p>
-          A finished five — daily or pack — earns a rank, and the ranks are puns on
-          the number you scored. Three hundred are Spartans, the quattrocento is the
-          1400s, and above 450 it is a clock face counting down what you left on the
-          table:
+          A finished five — daily or pack — earns a rank, and the ranks climb: a
+          footnote in the margins, an officer, a legend, and finally someone history
+          does not forget.
         </p>
         <p className="muted-note">
           {[...SCORE_BANDS]

@@ -7,7 +7,7 @@ import { formatYear, formatGap } from "../game/format";
 import { recordPack, loadStore, recordOf } from "../game/storage";
 import { toGuessRow } from "../game/history";
 import { packShareText } from "../game/share";
-import { scoreTitle } from "../game/titles";
+import { scoreTitle, scoreNote } from "../game/titles";
 import YearInput from "./YearInput";
 import ShareButton from "./ShareButton";
 import ScoreDots from "./ScoreDots";
@@ -90,6 +90,7 @@ export default function PackGame({ themeId, initialSeed, onExit, onStoreChange }
             <span className="score-max"> / {MAX_DAILY_SCORE}</span>
           </h2>
           <p className="score-title">{scoreTitle(total)}</p>
+          <p className="score-note">{scoreNote(total)}</p>
           <ScoreDots scores={scores} />
           {total >= record.best && total > 0 && <p className="record-badge">Best yet in this pack!</p>}
 
