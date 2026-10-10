@@ -6,6 +6,7 @@ import {
   GRACE_YEARS,
 } from "../game/scoring";
 import { THEMES } from "../game/themes";
+import { SCORE_BANDS } from "../game/titles";
 
 interface Props {
   onClose: () => void;
@@ -81,6 +82,20 @@ export default function Faq({ onClose }: Props) {
         <p className="muted-note">
           Roughly: nail it → 100, within ~15% → ~75, within ~30% → ~55, way off (double
           or halve the true age) → near 0.
+        </p>
+
+        <h3>Titles</h3>
+        <p>
+          A finished five — daily or pack — earns a rank, and the ranks are puns on
+          the number you scored. Three hundred are Spartans, the quattrocento is the
+          1400s, and above 450 it is a clock face counting down what you left on the
+          table:
+        </p>
+        <p className="muted-note">
+          {[...SCORE_BANDS]
+            .reverse()
+            .map((b) => `${b.min === 0 ? "under 100" : `${b.min}+`} → ${b.title}`)
+            .join(" · ")}
         </p>
 
         <h3>How hard is it going to be?</h3>

@@ -331,6 +331,13 @@ main { flex: 1; }
 .score-max { font-size: 1.5rem; color: var(--text-muted); font-weight: 400; }
 .score-sub { color: var(--text-muted); margin-top: 0.25rem; }
 .record-badge { color: var(--accent); font-style: italic; margin-top: 0.75rem; }
+.score-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--accent);
+  margin-top: 0.5rem;
+}
 
 .score-dots { display: flex; gap: 0.4rem; justify-content: center; margin: 1.25rem 0; }
 .dot { width: 1.4rem; height: 1.4rem; border-radius: 4px; display: inline-block; }
@@ -565,6 +572,12 @@ main { flex: 1; }
 .history-result { color: var(--text-muted); font-size: 0.9rem; white-space: nowrap; }
 .history-chevron { color: var(--text-muted); font-size: 1.1rem; line-height: 1; }
 .history-body { padding: 0 0.85rem 0.35rem; }
+.history-badge {
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 0.6rem;
+}
 .history-body .recap { margin-top: 0.25rem; border-top: 0; }
 .history-body .score-dots { margin: 0.5rem 0 0; }
 .history-link { display: block; margin: 1.5rem auto 0; }

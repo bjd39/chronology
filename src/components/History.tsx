@@ -61,6 +61,7 @@ export default function History({ store, onExit }: Props) {
                   </button>
                   {isOpen && (
                     <div className="history-body">
+                      {entry.badge && <p className="history-badge">{entry.badge}</p>}
                       {entry.scores.length > 0 && <ScoreDots scores={entry.scores} />}
                       {entry.rounds.length > 0 ? (
                         <Recap rounds={entry.rounds} showScores={entry.mode !== "sudden"} />

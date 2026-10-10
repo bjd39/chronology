@@ -11,7 +11,9 @@ import {
   DEFAULT_SUDDEN_PCT,
   DAILY_QUESTIONS,
   GRACE_YEARS,
+  MAX_DAILY_SCORE,
 } from "./scoring";
+import { scoreTitle, SCORE_BANDS } from "./titles";
 import { EVENTS, dailyEvents, makeDeck, packEvents, difficultyCap, randomSeed } from "./events";
 import { THEMES, themePool, themeSize, themeById } from "./themes";
 import {
@@ -216,6 +218,55 @@ describe("pack share text", () => {
     const pack = packShareText(THEMES[0], [100, 96, 76, 88, 47], 407, 7).split("\n");
     expect(pack).toHaveLength(daily.length);
     expect(pack.slice(1, 4)).toEqual(daily.slice(1, 4));
+  });
+});
+
+describe("score titles", () => {
+  it("hands out a rank at each band, and not before", () => {
+    const expected: [number, string][] = [
+      [0, "Decimated"],
+      [99, "Decimated"],
+      [100, "Centurion"],
+      [199, "Centurion"],
+      [200, "Bicenturion"],
+      [299, "Bicenturion"],
+      [300, "Spartan"],
+      [399, "Spartan"],
+      [400, "Quattrocento"],
+      [449, "Quattrocento"],
+      [450, "Half Past Four"],
+      [474, "Half Past Four"],
+      [475, "Quarter to Five"],
+      [489, "Quarter to Five"],
+      [490, "Ten to Five"],
+      [499, "Ten to Five"],
+      [500, "Bang on Time"],
+    ];
+    for (const [total, title] of expected) expect(scoreTitle(total)).toBe(title);
+  });
+  it("tops out exactly at a perfect round", () => {
+    expect(SCORE_BANDS[0].min).toBe(MAX_DAILY_SCORE);
+    expect(scoreTitle(MAX_DAILY_SCORE)).not.toBe(scoreTitle(MAX_DAILY_SCORE - 1));
+  });
+  it("is a strictly descending ladder of distinct titles starting at zero", () => {
+    const mins = SCORE_BANDS.map((b) => b.min);
+    expect(mins).toEqual([...mins].sort((a, b) => b - a));
+    expect(new Set(mins).size).toBe(mins.length);
+    expect(new Set(SCORE_BANDS.map((b) => b.title)).size).toBe(SCORE_BANDS.length);
+    expect(mins[mins.length - 1]).toBe(0);
+  });
+  it("never leaves a score unranked", () => {
+    for (let total = 0; total <= MAX_DAILY_SCORE; total++) {
+      expect(scoreTitle(total)).not.toBe("");
+    }
+  });
+  it("rides along with the score in both share texts", () => {
+    expect(dailyShareText("2026-09-01", [100, 96, 76, 88, 47], 407)).toContain(
+      "407/500 · Quattrocento",
+    );
+    expect(packShareText(THEMES[0], [100, 100, 100, 100, 100], 500, 7)).toContain(
+      "500/500 · Bang on Time",
+    );
   });
 });
 

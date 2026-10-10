@@ -6,6 +6,7 @@ import { formatYear, formatGap, todayKey } from "../game/format";
 import { recordDaily, loadStore } from "../game/storage";
 import { toGuessRow } from "../game/history";
 import { dailyShareText } from "../game/share";
+import { scoreTitle } from "../game/titles";
 import YearInput from "./YearInput";
 import ShareButton from "./ShareButton";
 import ScoreDots from "./ScoreDots";
@@ -69,6 +70,7 @@ export default function DailyGame({ onExit, onStoreChange }: Props) {
             {result.total}
             <span className="score-max"> / {MAX_DAILY_SCORE}</span>
           </h2>
+          <p className="score-title">{scoreTitle(result.total)}</p>
           <ScoreDots scores={result.scores} />
 
           {result.rounds ? (

@@ -1,6 +1,7 @@
 // Wordle-style shareable text built from emoji, plus a link to the game.
 
 import { MAX_DAILY_SCORE } from "./scoring";
+import { scoreTitle } from "./titles";
 import type { Theme } from "./themes";
 
 /**
@@ -31,9 +32,13 @@ export function scoreSquare(score: number): string {
   return "⬛";
 }
 
-/** Total, the row of squares, then the individual scores. */
+/** Total and the rank it earned, the row of squares, then the individual scores. */
 function scoreboard(scores: number[], total: number, max: number): string {
-  return [`${total}/${max}`, scores.map(scoreSquare).join(""), scores.join(" / ")].join("\n");
+  return [
+    `${total}/${max} · ${scoreTitle(total)}`,
+    scores.map(scoreSquare).join(""),
+    scores.join(" / "),
+  ].join("\n");
 }
 
 export function dailyShareText(dateKey: string, scores: number[], total: number): string {

@@ -1,4 +1,5 @@
 import type { Guess, GuessRow, DailyResult, RunLog, Store } from "../types";
+import { scoreTitle } from "./titles";
 
 /** Compress an in-play guess down to what is worth keeping on disk. */
 export function toGuessRow(g: Guess): GuessRow {
@@ -19,6 +20,9 @@ export interface HistoryEntry {
   title: string;
   /** "371 / 500", "12 rounds" */
   result: string;
+  /** The rank the total earned ("Spartan"); absent for sudden death, which is
+   *  measured in rounds survived rather than points. */
+  badge?: string;
   scores: number[]; // for the dot row; empty when there is nothing to show
   rounds: GuessRow[];
   dailyKey?: string;
@@ -31,6 +35,7 @@ function dailyEntry(key: string, r: DailyResult): HistoryEntry {
     mode: "daily",
     title: `Daily · ${key}`,
     result: `${r.total} / ${r.scores.length * 100}`,
+    badge: scoreTitle(r.total),
     scores: r.scores,
     rounds: r.rounds ?? [],
     dailyKey: key,
@@ -57,6 +62,7 @@ function runEntry(run: RunLog, i: number, themeLabel: (id: string) => string): H
     mode: "pack",
     title: scope,
     result: `${run.total ?? 0} / ${run.rounds.length * 100 || 500}`,
+    badge: scoreTitle(run.total ?? 0),
     scores: run.rounds.map((r) => r.s),
     rounds: run.rounds,
   };
